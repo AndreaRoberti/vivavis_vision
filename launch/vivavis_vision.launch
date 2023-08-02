@@ -1,25 +1,30 @@
 <launch>
-	<node name="youbot_vision_red" pkg="youbot_vision" type="youbot_vision_node" respawn="false" output="screen">
-        <param name="optical_frame" type="string" value="camera_color_optical_frame"/>
-        <param name="fixed_frame" type="string" value="camera_link"/>
+    <node name="vivavis_vision" pkg="vivavis_vision" type="vivavis_vision_node" respawn="false"
+        output="screen">
+        <param name="optical_frame" type="string" value="camera_color_optical_frame" />
+        <param name="fixed_frame" type="string" value="camera_link" />
 
-        <param name="far_clip" type="double" value="2"/>
-        <param name="near_clip" type="double" value="0.0"/>
+        <param name="far_clip" type="double" value="2" />
+        <param name="near_clip" type="double" value="0.0" />
 
-        <param name="orig_cld_voxel_size" value="0.015"/>
-        <param name="object_cluster_distance" type="double" value="0.5"/>
-        <param name="min_object_cluster_size" type="int" value="1"/>
+        <param name="orig_cld_voxel_size" value="0.015" />
+        <param name="object_cluster_distance" type="double" value="0.5" />
+        <param name="min_object_cluster_size" type="int" value="1" />
 
-		<remap from="in_cloud" to="/camera/depth_registered/points"/>
-        <remap from="debug_pose" to="/youbot_one/ellipsoid/debug_pose"/>
+        <!-- <remap from="in_cloud" to="/camera/depth_registered/points"/> -->
+        <remap from="in_cloud" to="/slam_registration/sparse_pointcloud" />
+
+
+        <remap from="debug_pose" to="/vivavis/ellipsoid/debug_pose" />
         <!-- private handler-->
-		<remap from="youbot_vision_red/out_cloud" to="/youbot_one/filter_cloud"/>
-		<remap from="youbot_vision_red/out_cloud_array" to="/youbot_one/cloud_array"/>
-		<remap from="youbot_vision_red/ellipsoid" to="/youbot_one/ellipsoid_data"/>
-		<remap from="youbot_vision_red/ellipsoid_cloud" to="/youbot_one/ellipsoid_cloud"/>
+        <remap from="vivavis_vision/out_cloud" to="/vivavis/filter_cloud" />
+        <remap from="vivavis_vision/out_cloud_array" to="/vivavis/cloud_array" />
+        <remap from="vivavis_vision/ellipsoid" to="/vivavis/ellipsoid_data" />
+        <remap from="vivavis_vision/ellipsoid_cloud" to="/vivavis/ellipsoid_cloud" />
 
-	</node>
+    </node>
 
-    <node name="rviz_multi_youbot" pkg="rviz" type="rviz" args="-d $(find youbot_vision)/rviz/multi_youbot.rviz" respawn="false"/>  
+    <node name="rviz_vivavis" pkg="rviz" type="rviz"
+        args="-d $(find vivavis_vision)/rviz/vivavis_vision.rviz" respawn="false" />
 
 </launch>

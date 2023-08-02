@@ -39,5 +39,5 @@ catkin_package(
 
 include_directories(include ${Boost_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
-add_executable(vivavison_node src/vivavis_vision.cpp)
-target_link_libraries( vivavison_node ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES})
+add_executable(vivavis_vision_node src/vivavis_vision.cpp)
+target_link_libraries( vivavis_vision_node ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES})
