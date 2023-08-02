@@ -1,0 +1,17 @@
+<launch>
+    <node name="vivavis_combine_depth_rgb" pkg="vivavis_vision" type="combiner" args="" respawn="false" output="screen">
+
+        <param name="image_topic" type="string" value="/camera/color/image_raw"/>
+        <param name="info_topic" type="string" value="/camera/color/camera_info"/>
+        <param name="depth_topic" type="string" value="/camera/aligned_depth_to_color/image_raw"/>
+<!--
+        <param name="image_topic" type="string" value="/device_0/sensor_1/Color_0/image/data"/>
+        <param name="info_topic" type="string" value="/device_0/sensor_1/Color_0/info/camera_info"/>
+        <param name="depth_topic" type="string" value="/device_0/sensor_0/Depth_0/image/data"/>
+-->
+        <param name="sync_time" type="int" value="10"/>
+
+
+    </node>
+    
+</launch>
