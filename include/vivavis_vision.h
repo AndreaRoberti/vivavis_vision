@@ -38,8 +38,10 @@
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include <pcl/segmentation/extract_clusters.h>
 
-
 #include <geometry_msgs/PoseArray.h>
+
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include <altair_msgs/PointArray.h>
 #include <altair_msgs/CloudArray.h>
@@ -78,16 +80,20 @@ private:
     int max_object_cluster_size_, min_object_cluster_size_;
     int num_obj;
 
-    ros::Publisher cloud_pub, cloud_array_pub, ellipsoid_pub, ellipsoid_cloud_pub, pose_pub;
+    ros::Publisher cloud_pub, cloud_array_pub, ellipsoid_pub, ellipsoid_cloud_pub, pose_pub, visual_walls_pub;
 
     image_transport::ImageTransport it_;
     image_transport::Publisher rendered_image_publisher_;
 
     ros::Subscriber camera_info_sub, cloud_sub;
 
+    visualization_msgs::MarkerArray visualize_walls;
+
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr xyz_cld_ptr;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr prev_xyz_cld_ptr;
 
+    void createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
+    visualization_msgs::Marker addVisualWall(int id, float x_c, float y_c, float z_c);
     void makeEllipsoid(pcl::PointCloud<pcl::PointXYZRGB> &cloud, const Eigen::Vector3f radii, const Eigen::Vector4f &c);
 
     template <typename PointT>
