@@ -4,6 +4,9 @@
         <param name="image_topic" type="string" value="/camera/color/image_raw"/>
         <param name="info_topic" type="string" value="/camera/color/camera_info"/>
         <param name="depth_topic" type="string" value="/camera/aligned_depth_to_color/image_raw"/>
+
+
+        <remap from="vivavis_combine_depth_rgb/output_point_cloud" to="camera/depth_registered/points" />
 <!--
         <param name="image_topic" type="string" value="/device_0/sensor_1/Color_0/image/data"/>
         <param name="info_topic" type="string" value="/device_0/sensor_1/Color_0/info/camera_info"/>
