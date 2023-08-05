@@ -45,36 +45,33 @@ void VivavisVision::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &input)
     pass_z_camera.setFilterLimits(nearClipDistance, farClipDistance);
     pass_z_camera.setInputCloud(cloud);
     pass_z_camera.setKeepOrganized(true);
-    pass_z_camera.filter(*xyz_cld_ptr);
+    pass_z_camera.filter(*cld_tmp_z);
     // pub filter one
     // sensor_msgs::PointCloud2 cloud_msg;
     // pcl::toROSMsg(*xyz_cld_ptr, cloud_msg);
     // cloud_msg.header.frame_id = optical_frame;
     // cloud_pub.publish(cloud_msg);
 
-    /*
-        try
-        {
-            listener.waitForTransform(optical_frame, fixed_frame, input->header.stamp, ros::Duration(5.0));
-            listener.lookupTransform(fixed_frame, optical_frame, input->header.stamp, optical2map);
+    try
+    {
+        listener.waitForTransform(optical_frame, fixed_frame, input->header.stamp, ros::Duration(5.0));
+        listener.lookupTransform(fixed_frame, optical_frame, input->header.stamp, optical2map);
 
-            pcl_ros::transformPointCloud(*cld_tmp_z, *cld_tmp, optical2map);
+        pcl_ros::transformPointCloud(*cld_tmp_z, *xyz_cld_ptr, optical2map);
 
-            pcl::PassThrough<pcl::PointXYZRGB> pass_z;
-            pass_z.setFilterFieldName("z");
-            pass_z.setFilterLimits(0.01, 1.5);
-            pass_z.setInputCloud(cld_tmp);
-            pass_z.setKeepOrganized(true);
-            pass_z.filter(*xyz_cld_ptr);
+        // pcl::PassThrough<pcl::PointXYZRGB> pass_z;
+        // pass_z.setFilterFieldName("z");
+        // pass_z.setFilterLimits(0.01, 1.5);
+        // pass_z.setInputCloud(cld_tmp);
+        // pass_z.setKeepOrganized(true);
+        // pass_z.filter(*xyz_cld_ptr);
 
-            xyz_cld_ptr->header.frame_id = fixed_frame;
-        }
-        catch (tf::TransformException ex)
-        {
-            ROS_ERROR("%s", ex.what());
-        }
-
-        */
+        xyz_cld_ptr->header.frame_id = fixed_frame;
+    }
+    catch (tf::TransformException ex)
+    {
+        ROS_ERROR("%s", ex.what());
+    }
 }
 
 template <typename PointT>
@@ -181,18 +178,17 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         extract.setIndices(inliers);
         extract.setNegative(false);
 
-        // float a = coefficients->values[0];
-        // float b = coefficients->values[1];
-        // float c = coefficients->values[2];
-        // float d = coefficients->values[3];
-        // float x_c = -d / a;
-        // float y_c = -d / b;
-        // float z_c = -d / c;
         // visualize_walls.markers.push_back(addVisualWall(idx, x_c, y_c, z_c));
 
         // Get the points associated with the planar surface
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGB>());
         extract.filter(*cloud_plane);
+
+        // compute bounding box and centroid
+        Eigen::Vector4f centroid, minp, maxp;
+        pcl::getMinMax3D(*cloud_plane, minp, maxp);
+        pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
+        setPlaneTransform(coefficients->values[0], coefficients->values[1], coefficients->values[2], centroid);
         // std::cout << "PointCloud representing the planar component: " << cloud_plane->size() << " data points." << std::endl;
 
         // Remove the planar inliers, extract the rest
@@ -206,21 +202,66 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         idx++;
     }
 
-    //createObstacles(cloud_obstacles);
-    
+    // createObstacles(cloud_obstacles);
+
     // pub walls
     sensor_msgs::PointCloud2 cloud_msg;
     pcl::toROSMsg(*cloud_planes, cloud_msg);
-    cloud_msg.header.frame_id = optical_frame;
+    cloud_msg.header.frame_id = fixed_frame; // optical_frame;
     cloud_pub.publish(cloud_msg);
 
     // visual_walls_pub.publish(visualize_walls);
 }
 
+void VivavisVision::setPlaneTransform(float x_c, float y_c, float z_c, Eigen::Vector4f centroid)
+{
+    Eigen::Vector3f plane_normal(x_c, y_c, z_c);
+    // Normalize the normal vector to get the orientation
+    plane_normal.normalize();
+    // Compute the plane orientation as a quaternion
+    Eigen::Quaternionf plane_quaternion;
+    Eigen::Vector3f up_vector(0.0, 0.0, 1.0); // Assuming Z-up convention
+    plane_quaternion.setFromTwoVectors(up_vector, plane_normal);
+    float angle = acos(plane_normal.dot(up_vector));
+
+    float wall_threshold = 91;
+    float floor_threshold = 5;
+
+    Eigen::Vector3f axis = plane_quaternion.toRotationMatrix().col(2); // The third column represents the Z-axis
+    tf::Vector3 currentTransform_t(centroid(0), centroid(1), centroid(2));
+    tf::Quaternion currentTransform_r(plane_quaternion.x(), plane_quaternion.y(), plane_quaternion.z(), plane_quaternion.w());
+    tf::Transform currentTransform = tf::Transform(currentTransform_r, currentTransform_t);
+
+    std::cout << " angle " << angle << " deg " << radiansToDegrees(angle) << "  axis.x() " << axis.x() << std::endl;
+    if (radiansToDegrees(angle) < floor_threshold)
+    {
+        br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "floor"));
+    }
+    else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold && axis.x() >= 1)
+    {
+        // It's the left wall
+        // Do something for the left wall
+        ROS_INFO("LEFT");
+        br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "left_wall"));
+    }
+    else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold && axis.x() < 1)
+    {
+        // It's the right wall
+        // Do something for the right wall
+        ROS_INFO("RIGHT");
+        br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "right_wall"));
+    }
+    else
+    {
+        // It's neither the floor nor the walls
+        // Handle other cases if needed
+    }
+}
+
 visualization_msgs::Marker VivavisVision::addVisualWall(int id, float x_c, float y_c, float z_c)
 {
     visualization_msgs::Marker plane_marker;
-    plane_marker.header.frame_id = optical_frame;
+    plane_marker.header.frame_id = fixed_frame; // optical_frame;
     plane_marker.header.stamp = ros::Time::now();
     plane_marker.id = id;
     plane_marker.ns = "plane";
@@ -315,10 +356,10 @@ void VivavisVision::createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &clou
 
         sensor_msgs::PointCloud2 ellipsoid_cloud_msg;
         pcl::toROSMsg(*ellipsoid_cloud, ellipsoid_cloud_msg);
-        ellipsoid_cloud_msg.header.frame_id = optical_frame; //;fixed_frame;
+        ellipsoid_cloud_msg.header.frame_id = fixed_frame; //;optical;
         ellipsoid_cloud_pub.publish(ellipsoid_cloud_msg);
 
-        debug_pose_array.header.frame_id = optical_frame; //;fixed_frame;
+        debug_pose_array.header.frame_id = fixed_frame; //;optical;
         pose_pub.publish(debug_pose_array);
         ellipsoid_pub.publish(ellipsoid_array);
         cloud_array_pub.publish(cloud_array);
@@ -332,9 +373,11 @@ void VivavisVision::update()
     if (xyz_cld_ptr->size() > 0)
     {
 
-        // map_cld_ptr = voxel_grid_subsample(xyz_cld_ptr, orig_cld_voxel_size);
+        map_cld_ptr = voxel_grid_subsample(xyz_cld_ptr, orig_cld_voxel_size);
         // std::cout << " map_cld_ptr " << map_cld_ptr->size() << std::endl;
-        processRoom(xyz_cld_ptr);
+        processRoom(map_cld_ptr);
+
+        // processRoom(xyz_cld_ptr);
     }
 }
 

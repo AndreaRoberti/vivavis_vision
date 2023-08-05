@@ -92,6 +92,7 @@ private:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr xyz_cld_ptr;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr prev_xyz_cld_ptr;
 
+    void setPlaneTransform(float x_c, float y_c, float z_c, Eigen::Vector4f centroid);
     void createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     visualization_msgs::Marker addVisualWall(int id, float x_c, float y_c, float z_c);
     void makeEllipsoid(pcl::PointCloud<pcl::PointXYZRGB> &cloud, const Eigen::Vector3f radii, const Eigen::Vector4f &c);
