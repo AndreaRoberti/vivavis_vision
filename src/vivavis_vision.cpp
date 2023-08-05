@@ -188,6 +188,7 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         Eigen::Vector4f centroid, minp, maxp;
         pcl::getMinMax3D(*cloud_plane, minp, maxp);
         pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
+        std::cout << " id " << idx << std::endl;
         setPlaneTransform(coefficients->values[0], coefficients->values[1], coefficients->values[2], centroid);
         // std::cout << "PointCloud representing the planar component: " << cloud_plane->size() << " data points." << std::endl;
 
@@ -224,31 +225,31 @@ void VivavisVision::setPlaneTransform(float x_c, float y_c, float z_c, Eigen::Ve
     plane_quaternion.setFromTwoVectors(up_vector, plane_normal);
     float angle = acos(plane_normal.dot(up_vector));
 
-    float wall_threshold = 91;
+    float wall_threshold = 95;
     float floor_threshold = 5;
 
-    Eigen::Vector3f axis = plane_quaternion.toRotationMatrix().col(2); // The third column represents the Z-axis
     tf::Vector3 currentTransform_t(centroid(0), centroid(1), centroid(2));
     tf::Quaternion currentTransform_r(plane_quaternion.x(), plane_quaternion.y(), plane_quaternion.z(), plane_quaternion.w());
     tf::Transform currentTransform = tf::Transform(currentTransform_r, currentTransform_t);
 
-    std::cout << " angle " << angle << " deg " << radiansToDegrees(angle) << "  axis.x() " << axis.x() << std::endl;
+    // Convert quaternion to Euler angles
+    Eigen::Vector3f euler_angles = plane_quaternion.toRotationMatrix().eulerAngles(0, 1, 2);
+
+    // Extract the z-rotation (in radians) from the Euler angles
+    float z_rotation = euler_angles[2];
+
     if (radiansToDegrees(angle) < floor_threshold)
     {
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "floor"));
     }
-    else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold && axis.x() >= 1)
+    else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
+             std::abs(radiansToDegrees(z_rotation)) > 0 && std::abs(radiansToDegrees(z_rotation)) < 90)
     {
-        // It's the left wall
-        // Do something for the left wall
-        ROS_INFO("LEFT");
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "left_wall"));
     }
-    else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold && axis.x() < 1)
+    else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
+             std::abs(radiansToDegrees(z_rotation)) > 90 && std::abs(radiansToDegrees(z_rotation)) < 180)
     {
-        // It's the right wall
-        // Do something for the right wall
-        ROS_INFO("RIGHT");
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "right_wall"));
     }
     else
