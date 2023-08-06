@@ -189,7 +189,8 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         pcl::getMinMax3D(*cloud_plane, minp, maxp);
         pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
         std::cout << " id " << idx << std::endl;
-        setPlaneTransform(coefficients->values[0], coefficients->values[1], coefficients->values[2], centroid);
+
+        setPlaneTransform(coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3], centroid);
         // std::cout << "PointCloud representing the planar component: " << cloud_plane->size() << " data points." << std::endl;
 
         // Remove the planar inliers, extract the rest
@@ -214,9 +215,9 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     // visual_walls_pub.publish(visualize_walls);
 }
 
-void VivavisVision::setPlaneTransform(float x_c, float y_c, float z_c, Eigen::Vector4f centroid)
+void VivavisVision::setPlaneTransform(float a, float b, float c, float d, Eigen::Vector4f centroid)
 {
-    Eigen::Vector3f plane_normal(x_c, y_c, z_c);
+    Eigen::Vector3f plane_normal(a, b, c);
     // Normalize the normal vector to get the orientation
     plane_normal.normalize();
     // Compute the plane orientation as a quaternion

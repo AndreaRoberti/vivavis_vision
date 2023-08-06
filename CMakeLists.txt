@@ -24,7 +24,15 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   pcl_msgs
   altair_msgs
+  message_generation
 )
+
+add_message_files(FILES
+wall_info.msg
+)
+
+generate_messages(DEPENDENCIES geometry_msgs sensor_msgs std_msgs)
+
 
 find_package(Boost REQUIRED COMPONENTS system filesystem random date_time thread)
 find_package(Eigen3 REQUIRED)
