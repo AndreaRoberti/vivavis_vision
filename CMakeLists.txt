@@ -28,7 +28,12 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 add_message_files(FILES
-wall_info.msg
+WallInfo.msg
+CloudArray.msg
+PointArray.msg
+PoseStampedArray.msg
+Ellipsoid.msg
+EllipsoidArray.msg
 )
 
 generate_messages(DEPENDENCIES geometry_msgs sensor_msgs std_msgs)

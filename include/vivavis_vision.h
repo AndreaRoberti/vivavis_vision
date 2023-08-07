@@ -43,10 +43,10 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include <altair_msgs/PointArray.h>
-#include <altair_msgs/CloudArray.h>
-#include <altair_msgs/Ellipsoid.h>
-#include <altair_msgs/EllipsoidArray.h>
+#include <vivavis_vision/PointArray.h>
+#include <vivavis_vision/CloudArray.h>
+#include <vivavis_vision/Ellipsoid.h>
+#include <vivavis_vision/EllipsoidArray.h>
 #include <math.h>
 
 #define degreesToRadians(angleDegrees) (angleDegrees * M_PI / 180.0) // Converts degrees to radians

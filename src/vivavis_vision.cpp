@@ -18,9 +18,9 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     private_nh_.param<int>("min_object_cluster_size", min_object_cluster_size_, 1);
 
     cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("out_cloud", 1);
-    cloud_array_pub = private_nh_.advertise<altair_msgs::CloudArray>("out_cloud_array", 1);
+    cloud_array_pub = private_nh_.advertise<vivavis_vision::CloudArray>("out_cloud_array", 1);
     ellipsoid_cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("ellipsoid_cloud", 1);
-    ellipsoid_pub = private_nh_.advertise<altair_msgs::EllipsoidArray>("ellipsoid", 1);
+    ellipsoid_pub = private_nh_.advertise<vivavis_vision::EllipsoidArray>("ellipsoid", 1);
 
     visual_walls_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_walls", 1, true);
 
@@ -188,7 +188,7 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         Eigen::Vector4f centroid, minp, maxp;
         pcl::getMinMax3D(*cloud_plane, minp, maxp);
         pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
-        std::cout << " id " << idx << std::endl;
+        // std::cout << " id " << idx << std::endl;
 
         setPlaneTransform(coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3], centroid);
         // std::cout << "PointCloud representing the planar component: " << cloud_plane->size() << " data points." << std::endl;
@@ -305,8 +305,8 @@ void VivavisVision::createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &clou
     {
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr ellipsoid_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-        altair_msgs::CloudArray cloud_array;
-        altair_msgs::EllipsoidArray ellipsoid_array;
+        vivavis_vision::CloudArray cloud_array;
+        vivavis_vision::EllipsoidArray ellipsoid_array;
         geometry_msgs::PoseArray debug_pose_array;
 
         debug_pose_array.poses.resize(num_obj);
@@ -337,7 +337,7 @@ void VivavisVision::createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &clou
             ellipsoid_rot << cos(rho), -sin(rho), 0, sin(rho), cos(rho), 0, 0, 0, 1;
             Eigen::Quaterniond rot(ellipsoid_rot);
 
-            altair_msgs::Ellipsoid ellipsoid_i;
+            vivavis_vision::Ellipsoid ellipsoid_i;
             ellipsoid_i.pose.position.x = c.x();
             ellipsoid_i.pose.position.y = c.y();
             ellipsoid_i.pose.position.z = c.z();

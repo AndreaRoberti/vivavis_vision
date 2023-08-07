@@ -193,6 +193,8 @@ Visualization Manager:
           Value: true
         left_wall:
           Value: true
+        right_wall:
+          Value: true
         world:
           Value: true
       Marker Alpha: 1
@@ -211,6 +213,8 @@ Visualization Manager:
           floor:
             {}
           left_wall:
+            {}
+          right_wall:
             {}
       Update Interval: 0
       Value: true
@@ -258,9 +262,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.725203275680542
+      Pitch: 0.5202032923698425
       Target Frame: <Fixed Frame>
-      Yaw: 4.665411949157715
+      Yaw: 4.715414047241211
     Saved: ~
 Window Geometry:
   Displays:
