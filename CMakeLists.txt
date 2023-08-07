@@ -23,7 +23,6 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
   pcl_msgs
-  altair_msgs
   message_generation
 )
 
@@ -45,7 +44,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
 #   LIBRARIES 
-  CATKIN_DEPENDS roslib roscpp pcl_msgs cv_bridge image_transport altair_msgs
+  CATKIN_DEPENDS roslib roscpp pcl_msgs cv_bridge image_transport
   #  DEPENDS system_lib
   # DEPENDS boost
 )

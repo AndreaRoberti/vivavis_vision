@@ -24,9 +24,7 @@
   <build_depend>pcl_msgs</build_depend>
   <build_depend>image_transport</build_depend>egein
   <build_depend>cv_bridge</build_depend>
-  <build_depend>altair_msgs</build_depend>
-    
-  <exec_depend>altair_msgs</exec_depend>
+  
   <exec_depend>tf_conversions</exec_depend>
   <exec_depend>image_transport</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
