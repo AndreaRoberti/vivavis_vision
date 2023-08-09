@@ -56,3 +56,8 @@ target_link_libraries( vivavis_vision_node ${catkin_LIBRARIES} ${PCL_LIBRARIES} 
 
 add_executable(combiner src/rgb_d_combiner.cpp)
 target_link_libraries(combiner  ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+
+add_executable(pcloud_stich src/pcloud_stitch.cc)
+target_compile_options(pcloud_stich)
+target_link_libraries(pcloud_stich ${LIBRARIES})

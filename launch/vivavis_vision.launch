@@ -13,8 +13,10 @@
         <param name="object_cluster_distance" type="double" value="1.5" /> 
         <param name="min_object_cluster_size" type="int" value="1" />
 
+        <remap from="in_cloud" to="/stiched_pointcloud"/>
         <remap from="in_cloud" to="/camera/depth_registered/points"/>
         <!-- <remap from="in_cloud" to="/slam_registration/sparse_pointcloud" /> -->
+        <!-- <remap from="out_cloud" to="/planes"/> -->
 
 
         <remap from="debug_pose" to="/vivavis/ellipsoid/debug_pose" />

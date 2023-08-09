@@ -1,0 +1,12 @@
+<launch>
+
+    <node name="pcloud_stich" pkg="vivavis_vision" type="pcloud_stich" respawn="false" output="screen">
+        <remap from="/in_pointcloud" to="/camera/depth_registered/points"/>
+        <!-- <remap from="/stiched_pointcloud" to="/camera/depth_registered/points"/> -->
+        
+        <param name="voxel_size_stiching" value="0.1"/>
+        <param name="voxel_size_input_cloud" value="0.1"/>
+        <param name="max_cam_depth" value="0.5"/>
+        <param name="output_reference_frame" value="world"/>
+    </node>
+</launch>
