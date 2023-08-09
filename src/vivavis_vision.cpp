@@ -18,9 +18,10 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     private_nh_.param<int>("min_object_cluster_size", min_object_cluster_size_, 1);
 
     cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("out_cloud", 1);
-    cloud_array_pub = private_nh_.advertise<vivavis_vision::CloudArray>("out_cloud_array", 1);
     ellipsoid_cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("ellipsoid_cloud", 1);
-    ellipsoid_pub = private_nh_.advertise<vivavis_vision::EllipsoidArray>("ellipsoid", 1);
+
+    // cloud_array_pub = private_nh_.advertise<vivavis_vision::CloudArray>("out_cloud_array", 1);
+    // ellipsoid_pub = private_nh_.advertise<vivavis_vision::EllipsoidArray>("ellipsoid", 1);
 
     visual_walls_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_walls", 1, true);
 
@@ -305,19 +306,19 @@ void VivavisVision::createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &clou
     {
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr ellipsoid_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-        vivavis_vision::CloudArray cloud_array;
-        vivavis_vision::EllipsoidArray ellipsoid_array;
+        // vivavis_vision::CloudArray cloud_array;
+        // vivavis_vision::EllipsoidArray ellipsoid_array;
         geometry_msgs::PoseArray debug_pose_array;
 
         debug_pose_array.poses.resize(num_obj);
-        ellipsoid_array.ellipsoid.resize(num_obj);
-        cloud_array.cloud.resize(num_obj);
+        //   ellipsoid_array.ellipsoid.resize(num_obj);
+        //   cloud_array.cloud.resize(num_obj);
         for (size_t i = 0; i < num_obj; i++)
         {
             sensor_msgs::PointCloud2 cloud_msg;
             pcl::toROSMsg(*objects.at(i), cloud_msg);
-            cloud_array.cloud.at(i).header.frame_id = fixed_frame;
-            cloud_array.cloud.at(i) = cloud_msg;
+            // cloud_array.cloud.at(i).header.frame_id = fixed_frame;
+            // cloud_array.cloud.at(i) = cloud_msg;
 
             Eigen::Vector4f min_pt, max_pt;
             pcl::getMinMax3D(*objects.at(i), min_pt, max_pt);
@@ -337,20 +338,20 @@ void VivavisVision::createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &clou
             ellipsoid_rot << cos(rho), -sin(rho), 0, sin(rho), cos(rho), 0, 0, 0, 1;
             Eigen::Quaterniond rot(ellipsoid_rot);
 
-            vivavis_vision::Ellipsoid ellipsoid_i;
-            ellipsoid_i.pose.position.x = c.x();
-            ellipsoid_i.pose.position.y = c.y();
-            ellipsoid_i.pose.position.z = c.z();
-            ellipsoid_i.pose.orientation.x = rot.x();
-            ellipsoid_i.pose.orientation.y = rot.y();
-            ellipsoid_i.pose.orientation.z = rot.z();
-            ellipsoid_i.pose.orientation.w = rot.w();
-            ellipsoid_i.radii.x = radii.x();
-            ellipsoid_i.radii.y = radii.y();
-            ellipsoid_i.radii.z = radii.z();
-            ellipsoid_array.ellipsoid.at(i) = ellipsoid_i;
+            // vivavis_vision::Ellipsoid ellipsoid_i;
+            // ellipsoid_i.pose.position.x = c.x();
+            // ellipsoid_i.pose.position.y = c.y();
+            // ellipsoid_i.pose.position.z = c.z();
+            // ellipsoid_i.pose.orientation.x = rot.x();
+            // ellipsoid_i.pose.orientation.y = rot.y();
+            // ellipsoid_i.pose.orientation.z = rot.z();
+            // ellipsoid_i.pose.orientation.w = rot.w();
+            // ellipsoid_i.radii.x = radii.x();
+            // ellipsoid_i.radii.y = radii.y();
+            // ellipsoid_i.radii.z = radii.z();
+            // ellipsoid_array.ellipsoid.at(i) = ellipsoid_i;
             //
-            debug_pose_array.poses.at(i) = ellipsoid_i.pose;
+            // debug_pose_array.poses.at(i) = ellipsoid_i.pose;
 
             makeEllipsoid(*ellipsoid_cloud_i, radii, c);
             *ellipsoid_cloud += *ellipsoid_cloud_i;
@@ -363,8 +364,8 @@ void VivavisVision::createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &clou
 
         debug_pose_array.header.frame_id = fixed_frame; //;optical;
         pose_pub.publish(debug_pose_array);
-        ellipsoid_pub.publish(ellipsoid_array);
-        cloud_array_pub.publish(cloud_array);
+        // ellipsoid_pub.publish(ellipsoid_array);
+        // cloud_array_pub.publish(cloud_array);
     }
 }
 

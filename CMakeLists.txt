@@ -11,18 +11,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE Debug)
 
 find_package(OpenCV)
-find_package(PCL REQUIRED)
+# find_package(PCL REQUIRED)
 
-find_package(OpenMP REQUIRED)
-if(OPENMP_FOUND)
-  message(STATUS "OPENMP FOUND")
-  set(OpenMP_FLAGS ${OpenMP_CXX_FLAGS})  # or if you use C: ${OpenMP_C_FLAGS}
-  set(OpenMP_LIBS gomp)
-endif()
+# find_package(OpenMP REQUIRED)
+# if(OPENMP_FOUND)
+#   message(STATUS "OPENMP FOUND")
+#   set(OpenMP_FLAGS ${OpenMP_CXX_FLAGS})  # or if you use C: ${OpenMP_C_FLAGS}
+#   set(OpenMP_LIBS gomp)
+# endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fopenmp")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native ")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fopenmp")
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native ")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 
 find_package(catkin REQUIRED COMPONENTS
   roslib
@@ -70,5 +70,6 @@ target_link_libraries(combiner  ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 
 add_executable(vivavis_pcloud_stich src/pcloud_stitch.cc)
-target_compile_options(vivavis_pcloud_stich PRIVATE ${OpenMP_FLAGS})
-target_link_libraries(vivavis_pcloud_stich ${catkin_LIBRARIES} ${OpenMP_LIBS})
+# target_compile_options(vivavis_pcloud_stich PRIVATE ${OpenMP_FLAGS})
+# target_link_libraries(vivavis_pcloud_stich ${catkin_LIBRARIES} ${OpenMP_LIBS})
+target_link_libraries(vivavis_pcloud_stich ${catkin_LIBRARIES})

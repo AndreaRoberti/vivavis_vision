@@ -43,10 +43,10 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include <vivavis_vision/PointArray.h>
-#include <vivavis_vision/CloudArray.h>
-#include <vivavis_vision/Ellipsoid.h>
-#include <vivavis_vision/EllipsoidArray.h>
+// #include <vivavis_vision/PointArray.h>
+// #include <vivavis_vision/CloudArray.h>
+// #include <vivavis_vision/Ellipsoid.h>
+// #include <vivavis_vision/EllipsoidArray.h>
 #include <math.h>
 
 #define degreesToRadians(angleDegrees) (angleDegrees * M_PI / 180.0) // Converts degrees to radians
@@ -92,6 +92,10 @@ private:
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr xyz_cld_ptr;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr prev_xyz_cld_ptr;
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cld_tmp_z;
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr map_cld_ptr;
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_planes;
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_obstacles;
 
     void setPlaneTransform(float a, float b, float c, float d, Eigen::Vector4f centroid);
     void createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
