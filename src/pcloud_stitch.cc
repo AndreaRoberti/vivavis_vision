@@ -135,7 +135,7 @@ private:
         pcl_ros::transformPointCloud(*outCloud, *outTransformedCloud, cloud2World);
 
         *stichedCloud += *outTransformedCloud;
-/*
+
 
          if (!stichedCloud->points.size())
         {
@@ -177,13 +177,13 @@ private:
             return;
         }
 
-        */
+        
         sensor_msgs::PointCloud2 stiched_res;
         pcl::toROSMsg(*stichedCloud, stiched_res);
 
         stiched_res.header.frame_id = output_reference_frame;
         stiched_res.header.stamp    = ros::Time::now();
-
+        
         cloud_pub.publish(stiched_res);
     };
 

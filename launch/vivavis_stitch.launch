@@ -6,7 +6,7 @@
         
         <param name="voxel_size_stiching" value="0.1"/>
         <param name="voxel_size_input_cloud" value="0.1"/>
-        <param name="max_cam_depth" value="0.5"/>
+        <param name="max_cam_depth" value="3.0"/>
         <param name="output_reference_frame" value="world"/>
     </node>
 </launch>
