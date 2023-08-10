@@ -45,8 +45,8 @@
 
 // #include <vivavis_vision/PointArray.h>
 // #include <vivavis_vision/CloudArray.h>
-// #include <vivavis_vision/Ellipsoid.h>
-// #include <vivavis_vision/EllipsoidArray.h>
+#include <vivavis_vision/Ellipsoid.h>
+#include <vivavis_vision/EllipsoidArray.h>
 #include <math.h>
 
 #define degreesToRadians(angleDegrees) (angleDegrees * M_PI / 180.0) // Converts degrees to radians
@@ -95,6 +95,7 @@ private:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_planes;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_obstacles;
 
+    cv::Mat getCameraPose();
     void setPlaneTransform(float a, float b, float c, float d, Eigen::Vector4f centroid);
     void createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     visualization_msgs::Marker addVisualWall(int id, float x_c, float y_c, float z_c);

@@ -23,7 +23,7 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     ellipsoid_cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("ellipsoid_cloud", 1);
 
     // cloud_array_pub = private_nh_.advertise<vivavis_vision::CloudArray>("out_cloud_array", 1);
-    // ellipsoid_pub = private_nh_.advertise<vivavis_vision::EllipsoidArray>("ellipsoid", 1);
+    ellipsoid_pub = private_nh_.advertise<vivavis_vision::EllipsoidArray>("ellipsoid", 1);
 
     visual_walls_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_walls", 1, true);
 
@@ -31,6 +31,31 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     cloud_sub = nh_.subscribe("in_cloud", 1, &VivavisVision::cloudCallback, this);
 
     br = new tf::TransformBroadcaster();
+}
+
+cv::Mat VivavisVision::getCameraPose()
+{
+    tf::StampedTransform cameraPose_transform;
+    try
+    {
+        listener.waitForTransform(fixed_frame, optical_frame, ros::Time(0), ros::Duration(10.0));
+        listener.lookupTransform(fixed_frame, optical_frame, ros::Time(0), cameraPose_transform);
+    }
+    catch (tf::TransformException ex)
+    {
+        ROS_ERROR("%s", ex.what());
+    }
+
+    // get optical frame transform w.r.t the base frame
+    auto rotMat = cameraPose_transform.getBasis();
+    auto trans = cameraPose_transform.getOrigin();
+
+    cv::Mat optFramePose = (cv::Mat_<float>(4, 4) << rotMat.getRow(0).x(), rotMat.getRow(0).y(), rotMat.getRow(0).z(), trans.x(),
+                            rotMat.getRow(1).x(), rotMat.getRow(1).y(), rotMat.getRow(1).z(), trans.y(),
+                            rotMat.getRow(2).x(), rotMat.getRow(2).y(), rotMat.getRow(2).z(), trans.z(),
+                            0, 0, 0, 1);
+
+    return optFramePose;
 }
 
 void VivavisVision::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &input)
@@ -181,8 +206,6 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         extract.setIndices(inliers);
         extract.setNegative(false);
 
-        // visualize_walls.markers.push_back(addVisualWall(idx, x_c, y_c, z_c));
-
         // Get the points associated with the planar surface
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGB>());
         extract.filter(*cloud_plane);
@@ -205,9 +228,10 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         idx++;
     }
 
-    // createObstacles(cloud_temp_obstacles);
-
     *cloud_planes += *cloud_temp_planes;
+    *cloud_obstacles += *cloud_temp_obstacles;
+    createObstacles(cloud_obstacles);
+
     // visual_walls_pub.publish(visualize_walls);
 
     // pub walls
@@ -248,8 +272,6 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         extract.setInputCloud(cloud);
         extract.setIndices(inliers);
         extract.setNegative(false);
-
-        // visualize_walls.markers.push_back(addVisualWall(idx, x_c, y_c, z_c));
 
         // Get the points associated with the planar surface
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -364,11 +386,11 @@ void VivavisVision::createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &clou
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr ellipsoid_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
         // vivavis_vision::CloudArray cloud_array;
-        // vivavis_vision::EllipsoidArray ellipsoid_array;
+        vivavis_vision::EllipsoidArray ellipsoid_array;
         geometry_msgs::PoseArray debug_pose_array;
 
         debug_pose_array.poses.resize(num_obj);
-        //   ellipsoid_array.ellipsoid.resize(num_obj);
+        ellipsoid_array.ellipsoid.resize(num_obj);
         //   cloud_array.cloud.resize(num_obj);
         for (size_t i = 0; i < num_obj; i++)
         {
@@ -395,18 +417,18 @@ void VivavisVision::createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &clou
             ellipsoid_rot << cos(rho), -sin(rho), 0, sin(rho), cos(rho), 0, 0, 0, 1;
             Eigen::Quaterniond rot(ellipsoid_rot);
 
-            // vivavis_vision::Ellipsoid ellipsoid_i;
-            // ellipsoid_i.pose.position.x = c.x();
-            // ellipsoid_i.pose.position.y = c.y();
-            // ellipsoid_i.pose.position.z = c.z();
-            // ellipsoid_i.pose.orientation.x = rot.x();
-            // ellipsoid_i.pose.orientation.y = rot.y();
-            // ellipsoid_i.pose.orientation.z = rot.z();
-            // ellipsoid_i.pose.orientation.w = rot.w();
-            // ellipsoid_i.radii.x = radii.x();
-            // ellipsoid_i.radii.y = radii.y();
-            // ellipsoid_i.radii.z = radii.z();
-            // ellipsoid_array.ellipsoid.at(i) = ellipsoid_i;
+            vivavis_vision::Ellipsoid ellipsoid_i;
+            ellipsoid_i.pose.position.x = c.x();
+            ellipsoid_i.pose.position.y = c.y();
+            ellipsoid_i.pose.position.z = c.z();
+            ellipsoid_i.pose.orientation.x = rot.x();
+            ellipsoid_i.pose.orientation.y = rot.y();
+            ellipsoid_i.pose.orientation.z = rot.z();
+            ellipsoid_i.pose.orientation.w = rot.w();
+            ellipsoid_i.radii.x = radii.x();
+            ellipsoid_i.radii.y = radii.y();
+            ellipsoid_i.radii.z = radii.z();
+            ellipsoid_array.ellipsoid.at(i) = ellipsoid_i;
             //
             // debug_pose_array.poses.at(i) = ellipsoid_i.pose;
 
@@ -419,9 +441,9 @@ void VivavisVision::createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &clou
         ellipsoid_cloud_msg.header.frame_id = fixed_frame; //;optical;
         ellipsoid_cloud_pub.publish(ellipsoid_cloud_msg);
 
-        debug_pose_array.header.frame_id = fixed_frame; //;optical;
-        pose_pub.publish(debug_pose_array);
-        // ellipsoid_pub.publish(ellipsoid_array);
+        // debug_pose_array.header.frame_id = fixed_frame; //;optical;
+        // pose_pub.publish(debug_pose_array);
+        ellipsoid_pub.publish(ellipsoid_array);
         // cloud_array_pub.publish(cloud_array);
     }
 }
