@@ -4,6 +4,8 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
                                                     it_(nh),
                                                     xyz_cld_ptr(new pcl::PointCloud<pcl::PointXYZRGB>),
                                                     prev_xyz_cld_ptr(new pcl::PointCloud<pcl::PointXYZRGB>),
+                                                    cloud_planes(new pcl::PointCloud<pcl::PointXYZRGB>),
+                                                    cloud_obstacles(new pcl::PointCloud<pcl::PointXYZRGB>),
                                                     num_obj(0)
 {
 
@@ -39,40 +41,40 @@ void VivavisVision::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &input)
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cld_tmp(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cld_tmp_z(new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::fromPCLPointCloud2(pcl_pc2, *cloud);
+    pcl::fromPCLPointCloud2(pcl_pc2, *xyz_cld_ptr);
 
+    /*
+    // real
     pcl::PassThrough<pcl::PointXYZRGB> pass_z_camera;
     pass_z_camera.setFilterFieldName("z");
     pass_z_camera.setFilterLimits(nearClipDistance, farClipDistance);
     pass_z_camera.setInputCloud(cloud);
     pass_z_camera.setKeepOrganized(true);
     pass_z_camera.filter(*cld_tmp_z);
-    // pub filter one
-    // sensor_msgs::PointCloud2 cloud_msg;
-    // pcl::toROSMsg(*xyz_cld_ptr, cloud_msg);
-    // cloud_msg.header.frame_id = optical_frame;
-    // cloud_pub.publish(cloud_msg);
 
-    try
-    {
-        listener.waitForTransform(optical_frame, fixed_frame, input->header.stamp, ros::Duration(5.0));
-        listener.lookupTransform(fixed_frame, optical_frame, input->header.stamp, optical2map);
 
-        pcl_ros::transformPointCloud(*cld_tmp_z, *xyz_cld_ptr, optical2map);
 
-        // pcl::PassThrough<pcl::PointXYZRGB> pass_z;
-        // pass_z.setFilterFieldName("z");
-        // pass_z.setFilterLimits(0.01, 1.5);
-        // pass_z.setInputCloud(cld_tmp);
-        // pass_z.setKeepOrganized(true);
-        // pass_z.filter(*xyz_cld_ptr);
+        try
+        {
+            listener.waitForTransform(optical_frame, fixed_frame, input->header.stamp, ros::Duration(5.0));
+            listener.lookupTransform(fixed_frame, optical_frame, input->header.stamp, optical2map);
 
-        xyz_cld_ptr->header.frame_id = fixed_frame;
-    }
-    catch (tf::TransformException ex)
-    {
-        ROS_ERROR("%s", ex.what());
-    }
+            pcl_ros::transformPointCloud(*cld_tmp_z, *xyz_cld_ptr, optical2map);
+
+            // pcl::PassThrough<pcl::PointXYZRGB> pass_z;
+            // pass_z.setFilterFieldName("z");
+            // pass_z.setFilterLimits(0.01, 1.5);
+            // pass_z.setInputCloud(cld_tmp);
+            // pass_z.setKeepOrganized(true);
+            // pass_z.filter(*xyz_cld_ptr);
+
+            xyz_cld_ptr->header.frame_id = fixed_frame;
+        }
+        catch (tf::TransformException ex)
+        {
+            ROS_ERROR("%s", ex.what());
+        }
+        */
 }
 
 template <typename PointT>
@@ -146,24 +148,92 @@ std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> VivavisVision::clusterObject
     return obj_surf;
 }
 
-void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
+void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 {
 
     // Create the segmentation object for the planar model and set all the parameters
     pcl::SACSegmentation<pcl::PointXYZRGB> seg;
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_planes(new pcl::PointCloud<pcl::PointXYZRGB>());
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_obstacles(new pcl::PointCloud<pcl::PointXYZRGB>());
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_temp_planes(new pcl::PointCloud<pcl::PointXYZRGB>());
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_temp_obstacles(new pcl::PointCloud<pcl::PointXYZRGB>());
     seg.setOptimizeCoefficients(true);
     seg.setModelType(pcl::SACMODEL_PLANE);
     seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setMaxIterations(50);
-    seg.setDistanceThreshold(0.005);
+    seg.setMaxIterations(100);
+    seg.setDistanceThreshold(0.05);
 
     int idx = 0;
     int nr_points = (int)cloud->size();
-    while (cloud->size() > 0.3 * nr_points)
+    while (cloud->size() > 0.2 * nr_points)
+    {
+        // Segment the largest planar component from the remaining cloud
+        seg.setInputCloud(cloud);
+        seg.segment(*inliers, *coefficients);
+        if (inliers->indices.size() == 0)
+        {
+            std::cout << "Could not estimate a planar model for the given dataset." << std::endl;
+        }
+
+        // Extract the planar inliers from the input cloud
+        pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+        extract.setInputCloud(cloud);
+        extract.setIndices(inliers);
+        extract.setNegative(false);
+
+        // visualize_walls.markers.push_back(addVisualWall(idx, x_c, y_c, z_c));
+
+        // Get the points associated with the planar surface
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGB>());
+        extract.filter(*cloud_plane);
+
+        // // compute bounding box and centroid
+        // Eigen::Vector4f centroid, minp, maxp;
+        // pcl::getMinMax3D(*cloud_plane, minp, maxp);
+        // pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
+        // setPlaneTransform(coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3], centroid);
+        // std::cout << "PointCloud representing the planar component: " << cloud_plane->size() << " data points." << std::endl;
+
+        // Remove the planar inliers, extract the rest
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZRGB>);
+        extract.setNegative(true);
+        extract.filter(*cloud_f);
+        *cloud = *cloud_f;
+        *cloud_temp_obstacles = *cloud_f;
+        *cloud_temp_planes += *cloud_plane;
+
+        idx++;
+    }
+
+    // createObstacles(cloud_temp_obstacles);
+
+    *cloud_planes += *cloud_temp_planes;
+    // visual_walls_pub.publish(visualize_walls);
+
+    // pub walls
+    sensor_msgs::PointCloud2 cloud_msg;
+    pcl::toROSMsg(*cloud_planes, cloud_msg);
+    cloud_msg.header.frame_id = fixed_frame; // optical_frame;
+    cloud_pub.publish(cloud_msg);
+}
+
+void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
+{
+    // Create the segmentation object for the planar model and set all the parameters
+    pcl::SACSegmentation<pcl::PointXYZRGB> seg;
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_temp_planes(new pcl::PointCloud<pcl::PointXYZRGB>());
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_temp_obstacles(new pcl::PointCloud<pcl::PointXYZRGB>());
+    seg.setOptimizeCoefficients(true);
+    seg.setModelType(pcl::SACMODEL_PLANE);
+    seg.setMethodType(pcl::SAC_RANSAC);
+    seg.setMaxIterations(100);
+    seg.setDistanceThreshold(0.05);
+
+    int idx = 0;
+    int nr_points = (int)cloud->size();
+    while (cloud->size() > 0.1 * nr_points)
     {
         // Segment the largest planar component from the remaining cloud
         seg.setInputCloud(cloud);
@@ -199,21 +269,8 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         extract.setNegative(true);
         extract.filter(*cloud_f);
         *cloud = *cloud_f;
-        *cloud_obstacles = *cloud_f;
-        *cloud_planes += *cloud_plane;
-
         idx++;
     }
-
-    // createObstacles(cloud_obstacles);
-
-    // pub walls
-    sensor_msgs::PointCloud2 cloud_msg;
-    pcl::toROSMsg(*cloud_planes, cloud_msg);
-    cloud_msg.header.frame_id = fixed_frame; // optical_frame;
-    cloud_pub.publish(cloud_msg);
-
-    // visual_walls_pub.publish(visualize_walls);
 }
 
 void VivavisVision::setPlaneTransform(float a, float b, float c, float d, Eigen::Vector4f centroid)
@@ -377,10 +434,10 @@ void VivavisVision::update()
     {
 
         map_cld_ptr = voxel_grid_subsample(xyz_cld_ptr, orig_cld_voxel_size);
-        // std::cout << " map_cld_ptr " << map_cld_ptr->size() << std::endl;
-        processRoom(map_cld_ptr);
+        filterRoom(map_cld_ptr);
+        processRoom(cloud_planes);
 
-        // processRoom(xyz_cld_ptr);
+        // filterRoom(xyz_cld_ptr);
     }
 }
 

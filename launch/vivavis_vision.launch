@@ -1,5 +1,8 @@
 <launch>
-    <node name="vivavis_vision" pkg="vivavis_vision" type="vivavis_vision_node" respawn="false" launch-prefix="gdb -ex run --args" 
+    <!-- <node name="vivavis_vision" pkg="vivavis_vision" type="vivavis_vision_node" respawn="false"
+    launch-prefix="gdb -ex run - -args" 
+        output="screen"> -->
+    <node name="vivavis_vision" pkg="vivavis_vision" type="vivavis_vision_node" respawn="false"
         output="screen">
         <param name="optical_frame" type="string" value="camera_color_optical_frame" />
         <param name="fixed_frame" type="string" value="world" />
@@ -10,11 +13,11 @@
         <!-- <param name="orig_cld_voxel_size" value="0.05" /> -->
         <param name="orig_cld_voxel_size" value="0.05" /> <!-- 0.1 -->
 
-        <param name="object_cluster_distance" type="double" value="1.5" /> 
+        <param name="object_cluster_distance" type="double" value="1.5" />
         <param name="min_object_cluster_size" type="int" value="1" />
 
-        <!-- <remap from="in_cloud" to="/stiched_pointcloud"/> -->
-        <remap from="in_cloud" to="/camera/depth_registered/points"/>
+        <remap from="in_cloud" to="/stiched_pointcloud" />
+        <!-- <remap from="in_cloud" to="/camera/depth_registered/points"/> -->
         <!-- <remap from="in_cloud" to="/slam_registration/sparse_pointcloud" /> -->
         <!-- <remap from="out_cloud" to="/planes"/> -->
 
