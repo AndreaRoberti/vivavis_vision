@@ -19,13 +19,15 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     private_nh_.param<int>("max_object_cluster_size", max_object_cluster_size_, 500000);
     private_nh_.param<int>("min_object_cluster_size", min_object_cluster_size_, 1);
 
-    cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("out_cloud", 1);
+    cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("walls_cloud", 1);
+    cloud_obs_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("obstacles_cloud", 1);
     ellipsoid_cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("ellipsoid_cloud", 1);
 
     // cloud_array_pub = private_nh_.advertise<vivavis_vision::CloudArray>("out_cloud_array", 1);
     ellipsoid_pub = private_nh_.advertise<vivavis_vision::EllipsoidArray>("ellipsoid", 1);
 
     visual_walls_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_walls", 1, true);
+    visual_obstacles_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_obstacles", 1, true);
 
     pose_pub = nh_.advertise<geometry_msgs::PoseArray>("debug_pose", 1);
     cloud_sub = nh_.subscribe("in_cloud", 1, &VivavisVision::cloudCallback, this);
@@ -175,7 +177,6 @@ std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> VivavisVision::clusterObject
 
 void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 {
-
     // Create the segmentation object for the planar model and set all the parameters
     pcl::SACSegmentation<pcl::PointXYZRGB> seg;
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
@@ -210,13 +211,6 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGB>());
         extract.filter(*cloud_plane);
 
-        // // compute bounding box and centroid
-        // Eigen::Vector4f centroid, minp, maxp;
-        // pcl::getMinMax3D(*cloud_plane, minp, maxp);
-        // pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
-        // setPlaneTransform(coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3], centroid);
-        // std::cout << "PointCloud representing the planar component: " << cloud_plane->size() << " data points." << std::endl;
-
         // Remove the planar inliers, extract the rest
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZRGB>);
         extract.setNegative(true);
@@ -230,15 +224,18 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 
     *cloud_planes += *cloud_temp_planes;
     *cloud_obstacles += *cloud_temp_obstacles;
-    createObstacles(cloud_obstacles);
-
-    // visual_walls_pub.publish(visualize_walls);
+    createVisualObstacles(cloud_obstacles);
 
     // pub walls
     sensor_msgs::PointCloud2 cloud_msg;
     pcl::toROSMsg(*cloud_planes, cloud_msg);
     cloud_msg.header.frame_id = fixed_frame; // optical_frame;
     cloud_pub.publish(cloud_msg);
+    // pub obstacles
+    sensor_msgs::PointCloud2 cloud_msg_2;
+    pcl::toROSMsg(*cloud_obstacles, cloud_msg_2);
+    cloud_msg_2.header.frame_id = fixed_frame; // optical_frame;
+    cloud_obs_pub.publish(cloud_msg_2);
 }
 
 void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
@@ -281,9 +278,10 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         Eigen::Vector4f centroid, minp, maxp;
         pcl::getMinMax3D(*cloud_plane, minp, maxp);
         pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
-        // std::cout << " id " << idx << std::endl;
+        // std::cout << "\n***\n id " << idx << std::endl;
 
-        setPlaneTransform(coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3], centroid);
+        setPlaneTransform(idx, coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
+                          centroid, minp, maxp);
         // std::cout << "PointCloud representing the planar component: " << cloud_plane->size() << " data points." << std::endl;
 
         // Remove the planar inliers, extract the rest
@@ -295,7 +293,8 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     }
 }
 
-void VivavisVision::setPlaneTransform(float a, float b, float c, float d, Eigen::Vector4f centroid)
+void VivavisVision::setPlaneTransform(int id, float a, float b, float c, float d,
+                                      Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p)
 {
     Eigen::Vector3f plane_normal(a, b, c);
     // Normalize the normal vector to get the orientation
@@ -305,6 +304,9 @@ void VivavisVision::setPlaneTransform(float a, float b, float c, float d, Eigen:
     Eigen::Vector3f up_vector(0.0, 0.0, 1.0); // Assuming Z-up convention
     plane_quaternion.setFromTwoVectors(up_vector, plane_normal);
     float angle = acos(plane_normal.dot(up_vector));
+
+    visualize_walls.markers.push_back(addVisualObject(id, centroid, min_p, max_p, Eigen::Vector4f(0.0, 0.0, 1.0, 0.5), plane_quaternion));
+    visual_walls_pub.publish(visualize_walls);
 
     float wall_threshold = 95;
     float floor_threshold = 5;
@@ -316,21 +318,30 @@ void VivavisVision::setPlaneTransform(float a, float b, float c, float d, Eigen:
     // Convert quaternion to Euler angles
     Eigen::Vector3f euler_angles = plane_quaternion.toRotationMatrix().eulerAngles(0, 1, 2);
 
+    float dot_product = plane_normal.dot(up_vector);
+
     // Extract the z-rotation (in radians) from the Euler angles
     float z_rotation = euler_angles[2];
 
     if (radiansToDegrees(angle) < floor_threshold)
     {
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "floor"));
+        // std::cout << " FLOOR dot prod " << dot_product << std::endl;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
-             std::abs(radiansToDegrees(z_rotation)) > 0 && std::abs(radiansToDegrees(z_rotation)) < 90)
+             //  dot_product > 0)
+             std::abs(radiansToDegrees(z_rotation)) > 0 && std::abs(radiansToDegrees(z_rotation)) <= 90)
     {
+        // std::cout << " LEFT " << radiansToDegrees(angle) << std::endl;
+        // std::cout << " dot prod LEFT " << dot_product << std::endl;
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "left_wall"));
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              std::abs(radiansToDegrees(z_rotation)) > 90 && std::abs(radiansToDegrees(z_rotation)) < 180)
+    //  dot_product < 0)
     {
+        // std::cout << " RIGHT " << radiansToDegrees(angle) << std::endl;
+        // std::cout << " dot prod  RIGHT " << dot_product << std::endl;
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "right_wall"));
     }
     else
@@ -340,49 +351,53 @@ void VivavisVision::setPlaneTransform(float a, float b, float c, float d, Eigen:
     }
 }
 
-visualization_msgs::Marker VivavisVision::addVisualWall(int id, float x_c, float y_c, float z_c)
+visualization_msgs::Marker VivavisVision::addVisualObject(int id, Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p,
+                                                          Eigen::Vector4f color,
+                                                          Eigen::Quaternionf orientation)
 {
     visualization_msgs::Marker plane_marker;
     plane_marker.header.frame_id = fixed_frame; // optical_frame;
     plane_marker.header.stamp = ros::Time::now();
     plane_marker.id = id;
-    plane_marker.ns = "plane";
+    plane_marker.ns = std::to_string(id);
     plane_marker.action = visualization_msgs::Marker::ADD;
     plane_marker.type = visualization_msgs::Marker::CUBE;
-    // Extract the normal vector of the plane from the model coefficients
-    Eigen::Vector3f plane_normal(x_c, y_c, z_c);
-    // Normalize the normal vector to get the orientation
-    plane_normal.normalize();
-    // Compute the plane orientation as a quaternion
-    Eigen::Quaternionf plane_quaternion;
-    Eigen::Vector3f up_vector(0.0, 0.0, 1.0); // Assuming Z-up convention
-    plane_quaternion.setFromTwoVectors(up_vector, plane_normal);
 
-    plane_marker.pose.orientation.w = plane_quaternion.w();
-    plane_marker.pose.orientation.x = plane_quaternion.x();
-    plane_marker.pose.orientation.y = plane_quaternion.y();
-    plane_marker.pose.orientation.z = plane_quaternion.z();
-    plane_marker.pose.position.x = x_c; // coefficients->values[0];
-    plane_marker.pose.position.y = y_c; // coefficients->values[1];
-    plane_marker.pose.position.z = z_c; // coefficients->values[2];
-    plane_marker.scale.x = 1.0;         // Adjust the size of the plane visualization as needed
-    plane_marker.scale.y = 1.0;
-    plane_marker.scale.z = 0.01; // Adjust the thickness of the plane visualization as needed
-    plane_marker.color.a = 0.5;  // Adjust the transparency of the plane visualization
-    plane_marker.color.r = 1.0;  // Red color
-    plane_marker.color.g = 0.0;
-    plane_marker.color.b = 0.0;
+    plane_marker.pose.orientation.w = orientation.w();                // 1;
+    plane_marker.pose.orientation.x = orientation.x();                // 0;
+    plane_marker.pose.orientation.y = orientation.y();                // 0;
+    plane_marker.pose.orientation.z = orientation.z();                // 0;
+    plane_marker.pose.position.x = centroid[0];                       // coefficients->values[0];
+    plane_marker.pose.position.y = centroid[1];                       // coefficients->values[1];
+    plane_marker.pose.position.z = centroid[2];                       // coefficients->values[2];
+    plane_marker.scale.x = std::fabs(min_p[0]) + std::fabs(max_p[0]); // Adjust the size of the visualization as needed
+    plane_marker.scale.y = std::fabs(min_p[1]) + std::fabs(max_p[1]);
+    plane_marker.scale.z = std::fabs(min_p[2]) + std::fabs(max_p[2]); // Adjust the thickness of the  visualization as needed
+    plane_marker.color.r = color[0];                                  // 1.0;
+    plane_marker.color.g = color[1];                                  // 1.0;
+    plane_marker.color.b = color[2];                                  // 0.0;
+    plane_marker.color.a = color[3];                                  // 0.5;                                       // Adjust the transparency of the visualization
     return plane_marker;
 }
 
-void VivavisVision::createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
+void VivavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 {
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> objects = clusterObject(cloud, num_obj);
-
     // ROS_INFO_STREAM(ros::this_node::getName() << " HAS " << num_obj << "  objects");
-
     if (num_obj > 0)
     {
+        for (size_t i = 0; i < num_obj; i++)
+        {
+            Eigen::Vector4f min_pt, max_pt;
+            pcl::getMinMax3D(*objects.at(i), min_pt, max_pt);
+
+            Eigen::Vector4f c;
+            pcl::compute3DCentroid(*objects.at(i), c);
+
+            visualize_obstacles.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 1.0, 0.0, 0.5)));
+            visual_obstacles_pub.publish(visualize_obstacles);
+        }
+        /*
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr ellipsoid_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
         // vivavis_vision::CloudArray cloud_array;
@@ -445,6 +460,7 @@ void VivavisVision::createObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &clou
         // pose_pub.publish(debug_pose_array);
         ellipsoid_pub.publish(ellipsoid_array);
         // cloud_array_pub.publish(cloud_array);
+        */
     }
 }
 

@@ -113,7 +113,7 @@ private:
         pcl::PCLPointCloud2 pcl_pc2;
         pcl_conversions::toPCL(*msg, pcl_pc2);
         pcl::fromPCLPointCloud2(pcl_pc2, *inCloud);
-        ROS_WARN("TRANSFORM");
+        // ROS_WARN("TRANSFORM");
         // pcl::fromROSMsg(*msg, *inCloud);
 
         if (!inCloud->points.size())
