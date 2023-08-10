@@ -79,8 +79,6 @@ void VivavisVision::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &input)
     pass_z_camera.setKeepOrganized(true);
     pass_z_camera.filter(*cld_tmp_z);
 
-
-
         try
         {
             listener.waitForTransform(optical_frame, fixed_frame, input->header.stamp, ros::Duration(5.0));
@@ -224,7 +222,7 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 
     *cloud_planes += *cloud_temp_planes;
     *cloud_obstacles += *cloud_temp_obstacles;
-    createVisualObstacles(cloud_obstacles);
+    createVisualObstacles(cloud_obstacles); // create markers for obstacles
 
     // pub walls
     sensor_msgs::PointCloud2 cloud_msg;
