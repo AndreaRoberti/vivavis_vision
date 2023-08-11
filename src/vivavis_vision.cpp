@@ -25,6 +25,7 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
 
     // cloud_array_pub = private_nh_.advertise<vivavis_vision::CloudArray>("out_cloud_array", 1);
     ellipsoid_pub = private_nh_.advertise<vivavis_vision::EllipsoidArray>("ellipsoid", 1);
+    walls_info_pub = private_nh_.advertise<vivavis_vision::WallInfoArray>("walls_info", 1);
 
     visual_walls_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_walls", 1, true);
     visual_obstacles_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_obstacles", 1, true);
@@ -33,6 +34,7 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     cloud_sub = nh_.subscribe("in_cloud", 1, &VivavisVision::cloudCallback, this);
 
     br = new tf::TransformBroadcaster();
+    walls_info.walls.resize(6);
 }
 
 cv::Mat VivavisVision::getCameraPose()
@@ -323,7 +325,8 @@ void VivavisVision::setPlaneTransform(int id, float a, float b, float c, float d
     Eigen::Quaternionf plane_quaternion;
     Eigen::Vector3f up_vector(0.0, 0.0, 1.0); // Assuming Z-up convention
     plane_quaternion.setFromTwoVectors(up_vector, plane_normal);
-    float angle = acos(plane_normal.dot(up_vector));
+    float dot_product = plane_normal.dot(up_vector);
+    float angle = acos(dot_product);
 
     visualize_walls.markers.push_back(addVisualObject(id, centroid, min_p, max_p, Eigen::Vector4f(0.0, 0.0, 1.0, 0.5), plane_quaternion));
     visual_walls_pub.publish(visualize_walls);
@@ -338,35 +341,36 @@ void VivavisVision::setPlaneTransform(int id, float a, float b, float c, float d
     // Convert quaternion to Euler angles
     Eigen::Vector3f euler_angles = plane_quaternion.toRotationMatrix().eulerAngles(0, 1, 2);
 
-    float dot_product = plane_normal.dot(up_vector);
-
     // Extract the z-rotation (in radians) from the Euler angles
     float z_rotation = euler_angles[2];
 
     // std::cout << "  " << angle << " dot prod " << dot_product << " z rot " << z_rotation << std::endl;
-
+    // std::cout << "  centroid[1] < getCameraPose().at<float>(1, 3) " << centroid[1] << "  " << getCameraPose().at<float>(1, 3) << std::endl;
     if (radiansToDegrees(angle) < floor_threshold)
     {
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "floor"));
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[0] < getCameraPose().at<float>(0, 3))
-    //  std::abs(radiansToDegrees(z_rotation)) > 0 && std::abs(radiansToDegrees(z_rotation)) <= 90)
-    //  dot_product > 0)
     {
-        // std::cout << " LEFT " << radiansToDegrees(angle) << std::endl;
-        // std::cout << " dot prod LEFT " << dot_product << std::endl;
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "left_wall"));
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[0] > getCameraPose().at<float>(0, 3))
-    //  std::abs(radiansToDegrees(z_rotation)) > 90 && std::abs(radiansToDegrees(z_rotation)) < 180)
-    //  dot_product < 0)
     {
-        // std::cout << " RIGHT " << radiansToDegrees(angle) << std::endl;
-        // std::cout << " dot prod  RIGHT " << dot_product << std::endl;
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "right_wall"));
     }
+    // else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
+    //          centroid[1] < getCameraPose().at<float>(1, 3))
+    // {
+    //     br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "back_wall"));
+    // }
+    // else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
+    //          z_rotation < std::fabs(0.1))
+    // {
+    //     ROS_INFO_STREAM("FRONT" << angle);
+    //     br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "front_wall"));
+    // }
     else
     {
         // It's neither the floor nor the walls

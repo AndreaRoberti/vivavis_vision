@@ -47,6 +47,8 @@
 // #include <vivavis_vision/CloudArray.h>
 #include <vivavis_vision/Ellipsoid.h>
 #include <vivavis_vision/EllipsoidArray.h>
+#include <vivavis_vision/WallInfo.h>
+#include <vivavis_vision/WallInfoArray.h>
 #include <math.h>
 
 #define degreesToRadians(angleDegrees) (angleDegrees * M_PI / 180.0) // Converts degrees to radians
@@ -81,7 +83,9 @@ private:
     int num_obj;
 
     ros::Publisher cloud_pub, cloud_obs_pub, cloud_array_pub, ellipsoid_pub, ellipsoid_cloud_pub, pose_pub, visual_walls_pub, visual_obstacles_pub;
-    ros::Publisher left_wall_info, right_wall_info, floor_wall_info, ceiling_wall_info, front_wall_info, back_wall_info;
+
+    // ros::Publisher left_wall_info, right_wall_info, floor_wall_info, ceiling_wall_info, front_wall_info, back_wall_info;
+    ros::Publisher walls_info_pub;
 
     image_transport::ImageTransport it_;
     image_transport::Publisher rendered_image_publisher_;
@@ -89,6 +93,8 @@ private:
     ros::Subscriber camera_info_sub, cloud_sub;
 
     visualization_msgs::MarkerArray visualize_walls, visualize_obstacles;
+
+    vivavis_vision::WallInfoArray walls_info;
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr xyz_cld_ptr;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr prev_xyz_cld_ptr;
