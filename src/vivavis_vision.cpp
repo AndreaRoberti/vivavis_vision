@@ -278,6 +278,28 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
         // std::cout << "\n***\n id " << idx << std::endl;
 
+        //-------------------------------------------------------------------
+        // // Calculate the desired normal vector
+        // pcl::PointXYZ target_point(centroid[0], getCameraPose().at<float>(1, 3), centroid[2]); // getCameraPose().at<float>(2, 3));
+        // pcl::PointXYZ point_on_plane(centroid[0],
+        //                              centroid[1],
+        //                              centroid[2]);
+        // // std::cout << " target point " << target_point << std::endl;
+        // // std::cout << " point_on_plane " << point_on_plane << std::endl;
+        // Eigen::Vector3f current_normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]);
+        // Eigen::Vector3f desired_normal = target_point.getVector3fMap() - point_on_plane.getVector3fMap();
+
+        // // Calculate rotation matrix
+        // Eigen::Matrix3f rotation_matrix;
+        // rotation_matrix = Eigen::Quaternionf().setFromTwoVectors(current_normal, desired_normal);
+
+        // // Apply rotation to the plane's coefficients
+        // Eigen::Vector3f new_normal = rotation_matrix * current_normal;
+        // coefficients->values[0] = new_normal.x();
+        // coefficients->values[1] = new_normal.y();
+        // coefficients->values[2] = new_normal.z();
+        //------------------------------------------------------------------
+
         setPlaneTransform(idx, coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
                           centroid, minp, maxp);
         // std::cout << "PointCloud representing the planar component: " << cloud_plane->size() << " data points." << std::endl;
@@ -321,21 +343,24 @@ void VivavisVision::setPlaneTransform(int id, float a, float b, float c, float d
     // Extract the z-rotation (in radians) from the Euler angles
     float z_rotation = euler_angles[2];
 
+    // std::cout << "  " << angle << " dot prod " << dot_product << " z rot " << z_rotation << std::endl;
+
     if (radiansToDegrees(angle) < floor_threshold)
     {
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "floor"));
-        // std::cout << " FLOOR dot prod " << dot_product << std::endl;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
-             //  dot_product > 0)
-             std::abs(radiansToDegrees(z_rotation)) > 0 && std::abs(radiansToDegrees(z_rotation)) <= 90)
+             centroid[0] < getCameraPose().at<float>(0, 3))
+    //  std::abs(radiansToDegrees(z_rotation)) > 0 && std::abs(radiansToDegrees(z_rotation)) <= 90)
+    //  dot_product > 0)
     {
         // std::cout << " LEFT " << radiansToDegrees(angle) << std::endl;
         // std::cout << " dot prod LEFT " << dot_product << std::endl;
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "left_wall"));
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
-             std::abs(radiansToDegrees(z_rotation)) > 90 && std::abs(radiansToDegrees(z_rotation)) < 180)
+             centroid[0] > getCameraPose().at<float>(0, 3))
+    //  std::abs(radiansToDegrees(z_rotation)) > 90 && std::abs(radiansToDegrees(z_rotation)) < 180)
     //  dot_product < 0)
     {
         // std::cout << " RIGHT " << radiansToDegrees(angle) << std::endl;
@@ -472,6 +497,8 @@ void VivavisVision::update()
         map_cld_ptr = voxel_grid_subsample(xyz_cld_ptr, orig_cld_voxel_size);
         filterRoom(map_cld_ptr);
         processRoom(cloud_planes);
+        // std::cout << getCameraPose() << std::endl;
+        // std::cout << " --- " << getCameraPose().at<float>(1, 3) << std::endl;
 
         // filterRoom(xyz_cld_ptr);
     }
