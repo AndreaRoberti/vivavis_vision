@@ -302,7 +302,7 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         // coefficients->values[2] = new_normal.z();
         //------------------------------------------------------------------
 
-        setPlaneTransform(idx, coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
+        setPlaneTransform(idx, cloud_plane->points.size(), coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
                           centroid, minp, maxp);
         // std::cout << "PointCloud representing the planar component: " << cloud_plane->size() << " data points." << std::endl;
 
@@ -313,9 +313,10 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         *cloud = *cloud_f;
         idx++;
     }
+    walls_info_pub.publish(walls_info);
 }
 
-void VivavisVision::setPlaneTransform(int id, float a, float b, float c, float d,
+void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, float c, float d,
                                       Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p)
 {
     Eigen::Vector3f plane_normal(a, b, c);
@@ -344,20 +345,39 @@ void VivavisVision::setPlaneTransform(int id, float a, float b, float c, float d
     // Extract the z-rotation (in radians) from the Euler angles
     float z_rotation = euler_angles[2];
 
+    vivavis_vision::WallInfo wall;
+    wall.a = a;
+    wall.b = b;
+    wall.c = c;
+    wall.d = d;
+    wall.num_points = num_points;
+    wall.color_id = id;
+    wall.header.stamp = ros::Time::now();
+    wall.pose.position.x = centroid(0);
+    wall.pose.position.y = centroid(1);
+    wall.pose.position.z = centroid(2);
+    wall.pose.orientation.x = plane_quaternion.x();
+    wall.pose.orientation.y = plane_quaternion.y();
+    wall.pose.orientation.z = plane_quaternion.z();
+    wall.pose.orientation.w = plane_quaternion.w();
+
     // std::cout << "  " << angle << " dot prod " << dot_product << " z rot " << z_rotation << std::endl;
     // std::cout << "  centroid[1] < getCameraPose().at<float>(1, 3) " << centroid[1] << "  " << getCameraPose().at<float>(1, 3) << std::endl;
     if (radiansToDegrees(angle) < floor_threshold)
     {
+        wall.header.frame_id = "floor";
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "floor"));
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[0] < getCameraPose().at<float>(0, 3))
     {
+        wall.header.frame_id = "left_wall";
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "left_wall"));
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[0] > getCameraPose().at<float>(0, 3))
     {
+        wall.header.frame_id = "right_wall";
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "right_wall"));
     }
     // else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
@@ -376,6 +396,10 @@ void VivavisVision::setPlaneTransform(int id, float a, float b, float c, float d
         // It's neither the floor nor the walls
         // Handle other cases if needed
     }
+
+    // walls_info.walls.push_back(wall);
+
+    walls_info.walls[id] = wall;
 }
 
 visualization_msgs::Marker VivavisVision::addVisualObject(int id, Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p,

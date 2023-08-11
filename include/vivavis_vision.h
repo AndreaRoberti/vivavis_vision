@@ -102,7 +102,7 @@ private:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_obstacles;
 
     cv::Mat getCameraPose();
-    void setPlaneTransform(int id, float a, float b, float c, float d,
+    void setPlaneTransform(int id, int num_points, float a, float b, float c, float d,
                            Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p);
     void createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     visualization_msgs::Marker addVisualObject(int id, Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p, Eigen::Vector4f color,
