@@ -224,7 +224,10 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     }
 
     *cloud_planes += *cloud_temp_planes;
+    cloud_planes = voxel_grid_subsample(cloud_planes, 0.15);
+    // ROS_INFO_STREAM("cloud_planes " << cloud_planes->points.size());
     *cloud_obstacles += *cloud_temp_obstacles;
+    cloud_obstacles = voxel_grid_subsample(cloud_obstacles, 0.15);
     createVisualObstacles(cloud_obstacles); // create markers for obstacles
 
     // pub walls
@@ -241,11 +244,6 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 
 void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 {
-
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_temp_planes(new pcl::PointCloud<pcl::PointXYZRGB>());
-    cloud_temp_planes = voxel_grid_subsample(cloud, 0.5);
-    ROS_INFO_STREAM("PTS " << cloud_temp_planes->points.size());
-
     // Create the segmentation object for the planar model and set all the parameters
     pcl::SACSegmentation<pcl::PointXYZRGB> seg;
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
@@ -254,15 +252,15 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     seg.setOptimizeCoefficients(true);
     seg.setModelType(pcl::SACMODEL_PLANE);
     seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setMaxIterations(100);
+    seg.setMaxIterations(10);
     seg.setDistanceThreshold(0.05);
 
     int idx = 0;
-    int nr_points = (int)cloud_temp_planes->size();
-    while (cloud_temp_planes->size() > 0.1 * nr_points)
+    int nr_points = (int)cloud->size();
+    while (cloud->size() > 0.1 * nr_points)
     {
         // Segment the largest planar component from the remaining cloud
-        seg.setInputCloud(cloud_temp_planes);
+        seg.setInputCloud(cloud);
         seg.segment(*inliers, *coefficients);
         if (inliers->indices.size() == 0)
         {
@@ -271,7 +269,7 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 
         // Extract the planar inliers from the input cloud
         pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-        extract.setInputCloud(cloud_temp_planes);
+        extract.setInputCloud(cloud);
         extract.setIndices(inliers);
         extract.setNegative(false);
 
@@ -314,7 +312,7 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZRGB>);
         extract.setNegative(true);
         extract.filter(*cloud_f);
-        *cloud_temp_planes = *cloud_f;
+        *cloud = *cloud_f;
         idx++;
     }
     walls_info_pub.publish(walls_info);
@@ -385,9 +383,10 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "right_wall"));
     }
     // else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
-    //          centroid[1] < getCameraPose().at<float>(1, 3))
+    //          centroid[1] > getCameraPose().at<float>(1, 3))
     // {
-    //     br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "back_wall"));
+    //     wall.header.frame_id = "front_wall";
+    //     br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "front_wall"));
     // }
     // else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
     //          z_rotation < std::fabs(0.1))
