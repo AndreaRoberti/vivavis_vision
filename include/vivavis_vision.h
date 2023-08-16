@@ -86,6 +86,7 @@ private:
 
     // ros::Publisher left_wall_info, right_wall_info, floor_wall_info, ceiling_wall_info, front_wall_info, back_wall_info;
     ros::Publisher walls_info_pub;
+    ros::Publisher human_ws_pub;
 
     image_transport::ImageTransport it_;
     image_transport::Publisher rendered_image_publisher_;
@@ -93,6 +94,7 @@ private:
     ros::Subscriber camera_info_sub, cloud_sub;
 
     visualization_msgs::MarkerArray visualize_walls, visualize_obstacles;
+    visualization_msgs::Marker human_ws;
 
     vivavis_vision::WallInfoArray walls_info;
 

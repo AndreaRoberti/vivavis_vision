@@ -29,6 +29,7 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
 
     visual_walls_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_walls", 1, true);
     visual_obstacles_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_obstacles", 1, true);
+    human_ws_pub = private_nh_.advertise<visualization_msgs::Marker>("human_ws", 1, true);
 
     pose_pub = nh_.advertise<geometry_msgs::PoseArray>("debug_pose", 1);
     cloud_sub = nh_.subscribe("in_cloud", 1, &VivavisVision::cloudCallback, this);
@@ -240,11 +241,15 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 
 void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 {
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_temp_planes(new pcl::PointCloud<pcl::PointXYZRGB>());
+    cloud_temp_planes = voxel_grid_subsample(cloud, 0.5);
+    ROS_INFO_STREAM("PTS " << cloud_temp_planes->points.size());
+
     // Create the segmentation object for the planar model and set all the parameters
     pcl::SACSegmentation<pcl::PointXYZRGB> seg;
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_temp_planes(new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_temp_obstacles(new pcl::PointCloud<pcl::PointXYZRGB>());
     seg.setOptimizeCoefficients(true);
     seg.setModelType(pcl::SACMODEL_PLANE);
@@ -253,11 +258,11 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     seg.setDistanceThreshold(0.05);
 
     int idx = 0;
-    int nr_points = (int)cloud->size();
-    while (cloud->size() > 0.1 * nr_points)
+    int nr_points = (int)cloud_temp_planes->size();
+    while (cloud_temp_planes->size() > 0.1 * nr_points)
     {
         // Segment the largest planar component from the remaining cloud
-        seg.setInputCloud(cloud);
+        seg.setInputCloud(cloud_temp_planes);
         seg.segment(*inliers, *coefficients);
         if (inliers->indices.size() == 0)
         {
@@ -266,7 +271,7 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 
         // Extract the planar inliers from the input cloud
         pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-        extract.setInputCloud(cloud);
+        extract.setInputCloud(cloud_temp_planes);
         extract.setIndices(inliers);
         extract.setNegative(false);
 
@@ -304,13 +309,12 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 
         setPlaneTransform(idx, cloud_plane->points.size(), coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
                           centroid, minp, maxp);
-        // std::cout << "PointCloud representing the planar component: " << cloud_plane->size() << " data points." << std::endl;
 
         // Remove the planar inliers, extract the rest
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZRGB>);
         extract.setNegative(true);
         extract.filter(*cloud_f);
-        *cloud = *cloud_f;
+        *cloud_temp_planes = *cloud_f;
         idx++;
     }
     walls_info_pub.publish(walls_info);
@@ -521,14 +525,14 @@ void VivavisVision::update()
 
     if (xyz_cld_ptr->size() > 0)
     {
+        human_ws_pub.publish(
+            addVisualObject(0, Eigen::Vector4f(getCameraPose().at<float>(0, 3), getCameraPose().at<float>(1, 3), getCameraPose().at<float>(2, 3), 0),
+                            Eigen::Vector4f(0.3, 0.3, 1.0, 0.5), Eigen::Vector4f(0.3, 0.3, 1.0, 0.5), Eigen::Vector4f(1.0, 0, 0, 0.5), Eigen::Quaternionf(0, 0, 0, 1.0))
 
+        );
         map_cld_ptr = voxel_grid_subsample(xyz_cld_ptr, orig_cld_voxel_size);
         filterRoom(map_cld_ptr);
         processRoom(cloud_planes);
-        // std::cout << getCameraPose() << std::endl;
-        // std::cout << " --- " << getCameraPose().at<float>(1, 3) << std::endl;
-
-        // filterRoom(xyz_cld_ptr);
     }
 }
 
