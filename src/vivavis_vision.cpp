@@ -224,10 +224,12 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     }
 
     *cloud_planes += *cloud_temp_planes;
-    cloud_planes = voxel_grid_subsample(cloud_planes, 0.15);
-    // ROS_INFO_STREAM("cloud_planes " << cloud_planes->points.size());
+    // cloud_planes = voxel_grid_subsample(cloud_planes, 0.15);
+    pcl::copyPointCloud(*voxel_grid_subsample(cloud_planes, 0.2), *cloud_planes);
+    ROS_INFO_STREAM("cloud_planes " << cloud_planes->points.size());
     *cloud_obstacles += *cloud_temp_obstacles;
-    cloud_obstacles = voxel_grid_subsample(cloud_obstacles, 0.15);
+    // cloud_obstacles = voxel_grid_subsample(cloud_obstacles, 0.15);
+    pcl::copyPointCloud(*voxel_grid_subsample(cloud_obstacles, 0.15), *cloud_obstacles);
     createVisualObstacles(cloud_obstacles); // create markers for obstacles
 
     // pub walls
