@@ -224,12 +224,12 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     }
 
     *cloud_planes += *cloud_temp_planes;
-    // cloud_planes = voxel_grid_subsample(cloud_planes, 0.15);
-    pcl::copyPointCloud(*voxel_grid_subsample(cloud_planes, 0.2), *cloud_planes);
+    cloud_planes = voxel_grid_subsample(cloud_planes, 0.25);
+    // pcl::copyPointCloud(*voxel_grid_subsample(cloud_planes, 0.2), *cloud_planes);
     ROS_INFO_STREAM("cloud_planes " << cloud_planes->points.size());
     *cloud_obstacles += *cloud_temp_obstacles;
-    // cloud_obstacles = voxel_grid_subsample(cloud_obstacles, 0.15);
-    pcl::copyPointCloud(*voxel_grid_subsample(cloud_obstacles, 0.15), *cloud_obstacles);
+    cloud_obstacles = voxel_grid_subsample(cloud_obstacles, 0.2);
+    // pcl::copyPointCloud(*voxel_grid_subsample(cloud_obstacles, 0.15), *cloud_obstacles);
     createVisualObstacles(cloud_obstacles); // create markers for obstacles
 
     // pub walls
@@ -254,7 +254,7 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     seg.setOptimizeCoefficients(true);
     seg.setModelType(pcl::SACMODEL_PLANE);
     seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setMaxIterations(10);
+    seg.setMaxIterations(50);
     seg.setDistanceThreshold(0.05);
 
     int idx = 0;
@@ -320,6 +320,62 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     walls_info_pub.publish(walls_info);
 }
 
+PlaneType VivavisVision::identifyPlane(const Eigen::Vector3f &cameraPosition, const Eigen::Vector3f &normal)
+{
+    // Calculate the vector from the camera position to a point on the plane
+    Eigen::Vector3f cameraToPlane = normal.normalized();
+
+    // Determine the axis with the largest absolute component of the normal vector
+    int axis = 0;
+    float maxComponent = std::abs(normal[0]);
+    for (int i = 1; i < 3; ++i)
+    {
+        if (std::abs(normal[i]) > maxComponent)
+        {
+            axis = i;
+            maxComponent = std::abs(normal[i]);
+        }
+    }
+
+    // Calculate the dot product between the camera-to-plane vector and the chosen axis
+    float dotProduct = cameraToPlane.dot(Eigen::Vector3f::Unit(axis));
+
+    // Classify the plane based on the dot product
+    if (axis == 2)
+    { // Z-axis
+        if (dotProduct > 0.0f)
+        {
+            return Ceiling;
+        }
+        else
+        {
+            return Floor;
+        }
+    }
+    else if (axis == 0)
+    { // X-axis
+        if (dotProduct > 0.0f)
+        {
+            return LeftWall;
+        }
+        else
+        {
+            return RightWall;
+        }
+    }
+    else
+    { // Y-axis (assumed to be pointing up in the standard right-hand rule)
+        if (dotProduct > 0.0f)
+        {
+            return FrontWall;
+        }
+        else
+        {
+            return BackWall;
+        }
+    }
+}
+
 void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, float c, float d,
                                       Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p)
 {
@@ -332,6 +388,10 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     plane_quaternion.setFromTwoVectors(up_vector, plane_normal);
     float dot_product = plane_normal.dot(up_vector);
     float angle = acos(dot_product);
+
+    // std::cout << identifyPlane(Eigen::Vector3f(getCameraPose().at<float>(0, 3), getCameraPose().at<float>(1, 3), getCameraPose().at<float>(2, 3)),
+    //                            plane_normal)
+    //           << std::endl;
 
     visualize_walls.markers.push_back(addVisualObject(id, centroid, min_p, max_p, Eigen::Vector4f(0.0, 0.0, 1.0, 0.5), plane_quaternion));
     visual_walls_pub.publish(visualize_walls);
@@ -364,9 +424,11 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     wall.pose.orientation.y = plane_quaternion.y();
     wall.pose.orientation.z = plane_quaternion.z();
     wall.pose.orientation.w = plane_quaternion.w();
+    // wall.header.frame_id = std::to_string(id);
 
     // std::cout << "  " << angle << " dot prod " << dot_product << " z rot " << z_rotation << std::endl;
     // std::cout << "  centroid[1] < getCameraPose().at<float>(1, 3) " << centroid[1] << "  " << getCameraPose().at<float>(1, 3) << std::endl;
+
     if (radiansToDegrees(angle) < floor_threshold)
     {
         wall.header.frame_id = "floor";

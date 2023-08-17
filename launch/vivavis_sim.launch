@@ -12,9 +12,10 @@
     </node>
 
     <!-- <node name="vivavis_vision" pkg="vivavis_vision" type="vivavis_vision_node" respawn="false"
-    launch-prefix="gdb -ex run - -args" 
+        launch-prefix="gdb -ex run - -args"
         output="screen"> -->
-    <node name="vivavis_vision" pkg="vivavis_vision" type="vivavis_vision_node" respawn="false"
+    <node name="vivavis_vision" pkg="vivavis_vision" type="vivavis_vision_node"
+        respawn="false"
         output="screen">
         <param name="optical_frame" type="string" value="camera_color_optical_frame" />
         <param name="fixed_frame" type="string" value="world" />

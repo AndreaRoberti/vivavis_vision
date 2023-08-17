@@ -53,7 +53,16 @@
 
 #define degreesToRadians(angleDegrees) (angleDegrees * M_PI / 180.0) // Converts degrees to radians
 #define radiansToDegrees(angleRadians) (angleRadians * 180.0 / M_PI) // Converts radians to degrees
-
+enum PlaneType
+{
+    Floor,
+    Ceiling,
+    RightWall,
+    LeftWall,
+    FrontWall,
+    BackWall,
+    Unknown
+};
 class VivavisVision
 {
 public:
@@ -103,6 +112,7 @@ private:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_planes;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_obstacles;
 
+    PlaneType identifyPlane(const Eigen::Vector3f &cameraPosition, const Eigen::Vector3f &normal);
     cv::Mat getCameraPose();
     void setPlaneTransform(int id, int num_points, float a, float b, float c, float d,
                            Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p);
