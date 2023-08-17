@@ -435,23 +435,29 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "floor"));
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
-             centroid[0] < getCameraPose().at<float>(0, 3))
+             centroid[0] < getCameraPose().at<float>(0, 3) &&
+             std::fabs(a) > 0.9 &&
+             std::fabs(a) < 1.1)
     {
         wall.header.frame_id = "left_wall";
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "left_wall"));
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
-             centroid[0] > getCameraPose().at<float>(0, 3))
+             centroid[0] > getCameraPose().at<float>(0, 3) &&
+             std::fabs(a) > 0.9 &&
+             std::fabs(a) < 1.1)
     {
         wall.header.frame_id = "right_wall";
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "right_wall"));
     }
-    // else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
-    //          centroid[1] > getCameraPose().at<float>(1, 3))
-    // {
-    //     wall.header.frame_id = "front_wall";
-    //     br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "front_wall"));
-    // }
+    else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
+             centroid[1] > getCameraPose().at<float>(1, 3) &&
+             std::fabs(b) > 0.9 &&
+             std::fabs(b) < 1.1)
+    {
+        wall.header.frame_id = "front_wall";
+        br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "front_wall"));
+    }
     // else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
     //          z_rotation < std::fabs(0.1))
     // {
