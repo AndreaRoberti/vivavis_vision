@@ -433,7 +433,6 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     if (radiansToDegrees(angle) < floor_threshold)
     {
         wall.header.frame_id = "floor";
-        br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "floor"));
         walls_info.walls[0] = wall;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
@@ -442,7 +441,6 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
              std::fabs(a) < 1.1)
     {
         wall.header.frame_id = "left_wall";
-        br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "left_wall"));
         walls_info.walls[1] = wall;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
@@ -451,7 +449,6 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
              std::fabs(a) < 1.1)
     {
         wall.header.frame_id = "right_wall";
-        br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "right_wall"));
         walls_info.walls[2] = wall;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
@@ -460,7 +457,6 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
              std::fabs(b) < 1.1)
     {
         wall.header.frame_id = "front_wall";
-        br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "front_wall"));
         walls_info.walls[3] = wall;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
@@ -469,15 +465,15 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
              std::fabs(b) < 1.1)
     {
         wall.header.frame_id = "back_wall";
-        br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "back_wall"));
         walls_info.walls[4] = wall;
     }
     else
     {
-        wall.header.frame_id = "ceiling_floor";
-        br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "ceiling_wall"));
+        wall.header.frame_id = "ceiling_wall";
         walls_info.walls[5] = wall;
     }
+    br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, wall.header.frame_id));
+
     // walls_info.walls[id] = wall;
 }
 
