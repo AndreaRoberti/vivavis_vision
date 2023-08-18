@@ -193,7 +193,7 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 
     int idx = 0;
     int nr_points = (int)cloud->size();
-    while (cloud->size() > 0.1 * nr_points)
+    while (cloud->size() > 0.05 * nr_points)
     {
         // Segment the largest planar component from the remaining cloud
         seg.setInputCloud(cloud);
@@ -213,6 +213,14 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
             // Get the points associated with the planar surface
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGB>());
             extract.filter(*cloud_plane);
+
+            // compute bounding box and centroid
+            Eigen::Vector4f centroid, minp, maxp;
+            pcl::getMinMax3D(*cloud_plane, minp, maxp);
+            pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
+            // calculate TFs
+            setPlaneTransform(idx, cloud_plane->points.size(), coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
+                              centroid, minp, maxp);
 
             // Remove the planar inliers, extract the rest
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -246,8 +254,11 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     pcl::toROSMsg(*cloud_obstacles, cloud_msg_2);
     cloud_msg_2.header.frame_id = fixed_frame; // optical_frame;
     cloud_obs_pub.publish(cloud_msg_2);
+
+    walls_info_pub.publish(walls_info);
 }
 
+// [UNUSED]
 void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 {
     // Create the segmentation object for the planar model and set all the parameters
@@ -419,10 +430,6 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     wall.pose.orientation.y = plane_quaternion.y();
     wall.pose.orientation.z = plane_quaternion.z();
     wall.pose.orientation.w = plane_quaternion.w();
-    // wall.header.frame_id = std::to_string(id);
-
-    // std::cout << "  " << angle << " dot prod " << dot_product << " z rot " << z_rotation << std::endl;
-    // std::cout << "  centroid[1] < getCameraPose().at<float>(1, 3) " << centroid[1] << "  " << getCameraPose().at<float>(1, 3) << std::endl;
 
     if (radiansToDegrees(angle) < floor_threshold)
     {
@@ -463,12 +470,13 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     }
     else
     {
-        wall.header.frame_id = "ceiling_wall";
-        walls_info.walls[5] = wall;
+        if (radiansToDegrees(angle) < floor_threshold)
+        {
+            wall.header.frame_id = "ceiling_wall";
+            walls_info.walls[5] = wall;
+        }
     }
     br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, wall.header.frame_id));
-
-    // walls_info.walls[id] = wall;
 }
 
 visualization_msgs::Marker VivavisVision::addVisualObject(int id, Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p,
@@ -565,7 +573,7 @@ void VivavisVision::update()
         );
         map_cld_ptr = voxel_grid_subsample(xyz_cld_ptr, orig_cld_voxel_size);
         filterRoom(map_cld_ptr);
-        processRoom(cloud_planes);
+        // processRoom(cloud_planes);
     }
 }
 
