@@ -330,62 +330,6 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     // }
 }
 
-PlaneType VivavisVision::identifyPlane(const Eigen::Vector3f &cameraPosition, const Eigen::Vector3f &normal)
-{
-    // Calculate the vector from the camera position to a point on the plane
-    Eigen::Vector3f cameraToPlane = normal.normalized();
-
-    // Determine the axis with the largest absolute component of the normal vector
-    int axis = 0;
-    float maxComponent = std::abs(normal[0]);
-    for (int i = 1; i < 3; ++i)
-    {
-        if (std::abs(normal[i]) > maxComponent)
-        {
-            axis = i;
-            maxComponent = std::abs(normal[i]);
-        }
-    }
-
-    // Calculate the dot product between the camera-to-plane vector and the chosen axis
-    float dotProduct = cameraToPlane.dot(Eigen::Vector3f::Unit(axis));
-
-    // Classify the plane based on the dot product
-    if (axis == 2)
-    { // Z-axis
-        if (dotProduct > 0.0f)
-        {
-            return Ceiling;
-        }
-        else
-        {
-            return Floor;
-        }
-    }
-    else if (axis == 0)
-    { // X-axis
-        if (dotProduct > 0.0f)
-        {
-            return LeftWall;
-        }
-        else
-        {
-            return RightWall;
-        }
-    }
-    else
-    { // Y-axis (assumed to be pointing up in the standard right-hand rule)
-        if (dotProduct > 0.0f)
-        {
-            return FrontWall;
-        }
-        else
-        {
-            return BackWall;
-        }
-    }
-}
-
 void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, float c, float d,
                                       Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p)
 {
