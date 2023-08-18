@@ -192,7 +192,7 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 
     int idx = 0;
     int nr_points = (int)cloud->size();
-    while (cloud->size() > 0.2 * nr_points)
+    while (cloud->size() > 0.1 * nr_points)
     {
         // Segment the largest planar component from the remaining cloud
         seg.setInputCloud(cloud);
@@ -223,13 +223,13 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         idx++;
     }
 
-    // *cloud_planes += *cloud_temp_planes;
-    *cloud_planes += *voxel_grid_subsample(cloud_temp_planes, 0.2);
-    // pcl::copyPointCloud(*voxel_grid_subsample(cloud_planes, 0.2), *cloud_planes);
+    *cloud_planes += *cloud_temp_planes;
+    // *cloud_planes += *voxel_grid_subsample(cloud_temp_planes, 0.2);
+    pcl::copyPointCloud(*voxel_grid_subsample(cloud_planes, 0.2), *cloud_planes);
     ROS_INFO_STREAM("cloud_planes " << cloud_planes->points.size());
     *cloud_obstacles += *cloud_temp_obstacles;
-    cloud_obstacles = voxel_grid_subsample(cloud_temp_obstacles, 0.2);
-    // pcl::copyPointCloud(*voxel_grid_subsample(cloud_obstacles, 0.15), *cloud_obstacles);
+    // cloud_obstacles = voxel_grid_subsample(cloud_temp_obstacles, 0.2);
+    pcl::copyPointCloud(*voxel_grid_subsample(cloud_obstacles, 0.2), *cloud_obstacles);
     createVisualObstacles(cloud_obstacles); // create markers for obstacles
 
     // pub walls
@@ -389,10 +389,6 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     float dot_product = plane_normal.dot(up_vector);
     float angle = acos(dot_product);
 
-    // std::cout << identifyPlane(Eigen::Vector3f(getCameraPose().at<float>(0, 3), getCameraPose().at<float>(1, 3), getCameraPose().at<float>(2, 3)),
-    //                            plane_normal)
-    //           << std::endl;
-
     visualize_walls.markers.push_back(addVisualObject(id, centroid, min_p, max_p, Eigen::Vector4f(0.0, 0.0, 1.0, 0.5), plane_quaternion));
     visual_walls_pub.publish(visualize_walls);
 
@@ -458,20 +454,19 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
         wall.header.frame_id = "front_wall";
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "front_wall"));
     }
-    // else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
-    //          z_rotation < std::fabs(0.1))
-    // {
-    //     ROS_INFO_STREAM("FRONT" << angle);
-    //     br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "front_wall"));
-    // }
+    else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
+             centroid[1] < getCameraPose().at<float>(1, 3) &&
+             std::fabs(b) > 0.9 &&
+             std::fabs(b) < 1.1)
+    {
+        wall.header.frame_id = "back_wall";
+        br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "back_wall"));
+    }
     else
     {
-        // It's neither the floor nor the walls
-        // Handle other cases if needed
+        wall.header.frame_id = "ceiling_floor";
+        br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "ceiling_wall"));
     }
-
-    // walls_info.walls.push_back(wall);
-
     walls_info.walls[id] = wall;
 }
 
@@ -487,10 +482,10 @@ visualization_msgs::Marker VivavisVision::addVisualObject(int id, Eigen::Vector4
     plane_marker.action = visualization_msgs::Marker::ADD;
     plane_marker.type = visualization_msgs::Marker::CUBE;
 
-    plane_marker.pose.orientation.w = orientation.w();                // 1;
-    plane_marker.pose.orientation.x = orientation.x();                // 0;
-    plane_marker.pose.orientation.y = orientation.y();                // 0;
-    plane_marker.pose.orientation.z = orientation.z();                // 0;
+    plane_marker.pose.orientation.w = orientation.w();
+    plane_marker.pose.orientation.x = orientation.x();
+    plane_marker.pose.orientation.y = orientation.y();
+    plane_marker.pose.orientation.z = orientation.z();
     plane_marker.pose.position.x = centroid[0];                       // coefficients->values[0];
     plane_marker.pose.position.y = centroid[1];                       // coefficients->values[1];
     plane_marker.pose.position.z = centroid[2];                       // coefficients->values[2];
@@ -521,70 +516,6 @@ void VivavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
             visualize_obstacles.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 1.0, 0.0, 0.5)));
             visual_obstacles_pub.publish(visualize_obstacles);
         }
-        /*
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr ellipsoid_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-
-        // vivavis_vision::CloudArray cloud_array;
-        vivavis_vision::EllipsoidArray ellipsoid_array;
-        geometry_msgs::PoseArray debug_pose_array;
-
-        debug_pose_array.poses.resize(num_obj);
-        ellipsoid_array.ellipsoid.resize(num_obj);
-        //   cloud_array.cloud.resize(num_obj);
-        for (size_t i = 0; i < num_obj; i++)
-        {
-            sensor_msgs::PointCloud2 cloud_msg;
-            pcl::toROSMsg(*objects.at(i), cloud_msg);
-            // cloud_array.cloud.at(i).header.frame_id = fixed_frame;
-            // cloud_array.cloud.at(i) = cloud_msg;
-
-            Eigen::Vector4f min_pt, max_pt;
-            pcl::getMinMax3D(*objects.at(i), min_pt, max_pt);
-
-            Eigen::Vector4f c;
-            Eigen::Vector3f radii;
-            radii.x() = std::abs((max_pt.x() - min_pt.x())) / 2.0f;
-            radii.y() = std::abs((max_pt.y() - min_pt.y())) / 2.0f;
-            radii.z() = std::abs((max_pt.z() - min_pt.z())) / 2.0f;
-
-            pcl::PointCloud<pcl::PointXYZRGB>::Ptr ellipsoid_cloud_i(new pcl::PointCloud<pcl::PointXYZRGB>);
-            pcl::compute3DCentroid(*objects.at(i), c);
-
-            // to check radian or degree.
-            double rho = atan((radii.z() - radii.x() + sqrt((radii.z() - radii.x()) * (radii.z() - radii.x()) + radii.y())) / radii.y()) * 180 / M_PI;
-            Eigen::Matrix<double, 3, 3> ellipsoid_rot;
-            ellipsoid_rot << cos(rho), -sin(rho), 0, sin(rho), cos(rho), 0, 0, 0, 1;
-            Eigen::Quaterniond rot(ellipsoid_rot);
-
-            vivavis_vision::Ellipsoid ellipsoid_i;
-            ellipsoid_i.pose.position.x = c.x();
-            ellipsoid_i.pose.position.y = c.y();
-            ellipsoid_i.pose.position.z = c.z();
-            ellipsoid_i.pose.orientation.x = rot.x();
-            ellipsoid_i.pose.orientation.y = rot.y();
-            ellipsoid_i.pose.orientation.z = rot.z();
-            ellipsoid_i.pose.orientation.w = rot.w();
-            ellipsoid_i.radii.x = radii.x();
-            ellipsoid_i.radii.y = radii.y();
-            ellipsoid_i.radii.z = radii.z();
-            ellipsoid_array.ellipsoid.at(i) = ellipsoid_i;
-            //
-            // debug_pose_array.poses.at(i) = ellipsoid_i.pose;
-
-            makeEllipsoid(*ellipsoid_cloud_i, radii, c);
-            *ellipsoid_cloud += *ellipsoid_cloud_i;
-        }
-
-        sensor_msgs::PointCloud2 ellipsoid_cloud_msg;
-        pcl::toROSMsg(*ellipsoid_cloud, ellipsoid_cloud_msg);
-        ellipsoid_cloud_msg.header.frame_id = fixed_frame; //;optical;
-        ellipsoid_cloud_pub.publish(ellipsoid_cloud_msg);
-
-        // debug_pose_array.header.frame_id = fixed_frame; //;optical;
-        // pose_pub.publish(debug_pose_array);
-        ellipsoid_pub.publish(ellipsoid_array);
-        // cloud_array_pub.publish(cloud_array);
-        */
     }
 }
 
