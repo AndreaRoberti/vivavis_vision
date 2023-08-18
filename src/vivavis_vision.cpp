@@ -6,6 +6,7 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
                                                     prev_xyz_cld_ptr(new pcl::PointCloud<pcl::PointXYZRGB>),
                                                     cloud_planes(new pcl::PointCloud<pcl::PointXYZRGB>),
                                                     cloud_obstacles(new pcl::PointCloud<pcl::PointXYZRGB>),
+                                                    cloud_final_obstacles(new pcl::PointCloud<pcl::PointXYZRGB>),
                                                     num_obj(0)
 {
 
@@ -229,6 +230,7 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     // *cloud_planes += *voxel_grid_subsample(cloud_temp_planes, 0.2);
     pcl::copyPointCloud(*voxel_grid_subsample(cloud_planes, 0.2), *cloud_planes);
     ROS_INFO_STREAM("cloud_planes " << cloud_planes->points.size());
+
     *cloud_obstacles += *cloud_temp_obstacles;
     // cloud_obstacles = voxel_grid_subsample(cloud_temp_obstacles, 0.2);
     pcl::copyPointCloud(*voxel_grid_subsample(cloud_obstacles, 0.2), *cloud_obstacles);
@@ -256,12 +258,13 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     seg.setOptimizeCoefficients(true);
     seg.setModelType(pcl::SACMODEL_PLANE);
     seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setMaxIterations(50);
-    seg.setDistanceThreshold(0.05);
+    seg.setMaxIterations(100);
+    seg.setDistanceThreshold(0.1);
 
     int idx = 0;
     int nr_points = (int)cloud->size();
-    while (cloud->size() > 0.1 * nr_points)
+    // while (cloud->size() > 0)
+    while (cloud->size() > 0.05 * nr_points)
     {
         // Segment the largest planar component from the remaining cloud
         seg.setInputCloud(cloud);
@@ -272,7 +275,6 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         }
         else
         {
-
             // Extract the planar inliers from the input cloud
             pcl::ExtractIndices<pcl::PointXYZRGB> extract;
             extract.setInputCloud(cloud);
@@ -287,32 +289,13 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
             Eigen::Vector4f centroid, minp, maxp;
             pcl::getMinMax3D(*cloud_plane, minp, maxp);
             pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
-            // std::cout << "\n***\n id " << idx << std::endl;
-
-            //-------------------------------------------------------------------
-            // // Calculate the desired normal vector
-            // pcl::PointXYZ target_point(centroid[0], getCameraPose().at<float>(1, 3), centroid[2]); // getCameraPose().at<float>(2, 3));
-            // pcl::PointXYZ point_on_plane(centroid[0],
-            //                              centroid[1],
-            //                              centroid[2]);
-            // // std::cout << " target point " << target_point << std::endl;
-            // // std::cout << " point_on_plane " << point_on_plane << std::endl;
-            // Eigen::Vector3f current_normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]);
-            // Eigen::Vector3f desired_normal = target_point.getVector3fMap() - point_on_plane.getVector3fMap();
-
-            // // Calculate rotation matrix
-            // Eigen::Matrix3f rotation_matrix;
-            // rotation_matrix = Eigen::Quaternionf().setFromTwoVectors(current_normal, desired_normal);
-
-            // // Apply rotation to the plane's coefficients
-            // Eigen::Vector3f new_normal = rotation_matrix * current_normal;
-            // coefficients->values[0] = new_normal.x();
-            // coefficients->values[1] = new_normal.y();
-            // coefficients->values[2] = new_normal.z();
-            //------------------------------------------------------------------
 
             setPlaneTransform(idx, cloud_plane->points.size(), coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
                               centroid, minp, maxp);
+
+            //*cloud_temp_obstacles += *filterCloseWall(cloud_obstacles,
+            //                                          coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
+            //                                          1.0);
 
             // Remove the planar inliers, extract the rest
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -323,6 +306,17 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         }
     }
     walls_info_pub.publish(walls_info);
+
+    // if (cloud_temp_obstacles->points.size() > 0)
+    // {
+    // pcl::copyPointCloud(*voxel_grid_subsample(cloud_temp_obstacles, 0.2), *cloud_final_obstacles);
+    // createVisualObstacles(cloud_final_obstacles); // create markers for obstacles
+    // //pub obstacles
+    // sensor_msgs::PointCloud2 cloud_msg_2;
+    // pcl::toROSMsg(*cloud_final_obstacles, cloud_msg_2);
+    // cloud_msg_2.header.frame_id = fixed_frame;
+    // cloud_obs_pub.publish(cloud_msg_2);
+    // }
 }
 
 PlaneType VivavisVision::identifyPlane(const Eigen::Vector3f &cameraPosition, const Eigen::Vector3f &normal)
@@ -512,6 +506,7 @@ void VivavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
     // ROS_INFO_STREAM(ros::this_node::getName() << " HAS " << num_obj << "  objects");
     if (num_obj > 0)
     {
+        visualize_obstacles.markers.clear();
         for (size_t i = 0; i < num_obj; i++)
         {
             Eigen::Vector4f min_pt, max_pt;
@@ -524,6 +519,37 @@ void VivavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
             visual_obstacles_pub.publish(visualize_obstacles);
         }
     }
+}
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr VivavisVision::filterCloseWall(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &obstacles,
+                                                                      float a,
+                                                                      float b,
+                                                                      float c,
+                                                                      float d,
+                                                                      float threshold)
+{
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cld(new pcl::PointCloud<pcl::PointXYZRGB>());
+    if (obstacles->points.size() > 0)
+    {
+        for (auto pts : obstacles->points)
+        {
+            // < T, IS WALL otherwise no
+            // std:: cout << std::fabs(a * pts.x + b * pts.y + c * pts.z + d)  << std::endl;
+            if (std::fabs(a * pts.x + b * pts.y + c * pts.z + d) > threshold)
+            {
+                pcl::PointXYZRGB out_points;
+                out_points.x = pts.x;
+                out_points.y = pts.y;
+                out_points.z = pts.z;
+                out_points.r = pts.r;
+                out_points.g = pts.g;
+                out_points.b = pts.b;
+
+                cld->push_back(out_points);
+            }
+        }
+    }
+    return cld;
 }
 
 void VivavisVision::update()

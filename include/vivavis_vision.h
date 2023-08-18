@@ -111,6 +111,7 @@ private:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr prev_xyz_cld_ptr;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_planes;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_obstacles;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_final_obstacles;
 
     PlaneType identifyPlane(const Eigen::Vector3f &cameraPosition, const Eigen::Vector3f &normal);
     cv::Mat getCameraPose();
@@ -126,4 +127,11 @@ private:
     voxel_grid_subsample(const boost::shared_ptr<pcl::PointCloud<PointT>> &cld_in, float cell_size);
     void filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     void processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr filterCloseWall(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &obstacles,
+                                                           float a,
+                                                           float b,
+                                                           float c,
+                                                           float d,
+                                                           float threshold);
 };
