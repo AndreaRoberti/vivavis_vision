@@ -201,26 +201,28 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         {
             std::cout << "Could not estimate a planar model for the given dataset." << std::endl;
         }
+        else
+        {
+            // Extract the planar inliers from the input cloud
+            pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+            extract.setInputCloud(cloud);
+            extract.setIndices(inliers);
+            extract.setNegative(false);
 
-        // Extract the planar inliers from the input cloud
-        pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-        extract.setInputCloud(cloud);
-        extract.setIndices(inliers);
-        extract.setNegative(false);
+            // Get the points associated with the planar surface
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGB>());
+            extract.filter(*cloud_plane);
 
-        // Get the points associated with the planar surface
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGB>());
-        extract.filter(*cloud_plane);
+            // Remove the planar inliers, extract the rest
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZRGB>);
+            extract.setNegative(true);
+            extract.filter(*cloud_f);
+            *cloud = *cloud_f;
+            *cloud_temp_obstacles = *cloud_f;
+            *cloud_temp_planes += *cloud_plane;
 
-        // Remove the planar inliers, extract the rest
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZRGB>);
-        extract.setNegative(true);
-        extract.filter(*cloud_f);
-        *cloud = *cloud_f;
-        *cloud_temp_obstacles = *cloud_f;
-        *cloud_temp_planes += *cloud_plane;
-
-        idx++;
+            idx++;
+        }
     }
 
     *cloud_planes += *cloud_temp_planes;
@@ -268,54 +270,57 @@ void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
         {
             std::cout << "Could not estimate a planar model for the given dataset." << std::endl;
         }
+        else
+        {
 
-        // Extract the planar inliers from the input cloud
-        pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-        extract.setInputCloud(cloud);
-        extract.setIndices(inliers);
-        extract.setNegative(false);
+            // Extract the planar inliers from the input cloud
+            pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+            extract.setInputCloud(cloud);
+            extract.setIndices(inliers);
+            extract.setNegative(false);
 
-        // Get the points associated with the planar surface
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGB>());
-        extract.filter(*cloud_plane);
+            // Get the points associated with the planar surface
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGB>());
+            extract.filter(*cloud_plane);
 
-        // compute bounding box and centroid
-        Eigen::Vector4f centroid, minp, maxp;
-        pcl::getMinMax3D(*cloud_plane, minp, maxp);
-        pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
-        // std::cout << "\n***\n id " << idx << std::endl;
+            // compute bounding box and centroid
+            Eigen::Vector4f centroid, minp, maxp;
+            pcl::getMinMax3D(*cloud_plane, minp, maxp);
+            pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
+            // std::cout << "\n***\n id " << idx << std::endl;
 
-        //-------------------------------------------------------------------
-        // // Calculate the desired normal vector
-        // pcl::PointXYZ target_point(centroid[0], getCameraPose().at<float>(1, 3), centroid[2]); // getCameraPose().at<float>(2, 3));
-        // pcl::PointXYZ point_on_plane(centroid[0],
-        //                              centroid[1],
-        //                              centroid[2]);
-        // // std::cout << " target point " << target_point << std::endl;
-        // // std::cout << " point_on_plane " << point_on_plane << std::endl;
-        // Eigen::Vector3f current_normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]);
-        // Eigen::Vector3f desired_normal = target_point.getVector3fMap() - point_on_plane.getVector3fMap();
+            //-------------------------------------------------------------------
+            // // Calculate the desired normal vector
+            // pcl::PointXYZ target_point(centroid[0], getCameraPose().at<float>(1, 3), centroid[2]); // getCameraPose().at<float>(2, 3));
+            // pcl::PointXYZ point_on_plane(centroid[0],
+            //                              centroid[1],
+            //                              centroid[2]);
+            // // std::cout << " target point " << target_point << std::endl;
+            // // std::cout << " point_on_plane " << point_on_plane << std::endl;
+            // Eigen::Vector3f current_normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]);
+            // Eigen::Vector3f desired_normal = target_point.getVector3fMap() - point_on_plane.getVector3fMap();
 
-        // // Calculate rotation matrix
-        // Eigen::Matrix3f rotation_matrix;
-        // rotation_matrix = Eigen::Quaternionf().setFromTwoVectors(current_normal, desired_normal);
+            // // Calculate rotation matrix
+            // Eigen::Matrix3f rotation_matrix;
+            // rotation_matrix = Eigen::Quaternionf().setFromTwoVectors(current_normal, desired_normal);
 
-        // // Apply rotation to the plane's coefficients
-        // Eigen::Vector3f new_normal = rotation_matrix * current_normal;
-        // coefficients->values[0] = new_normal.x();
-        // coefficients->values[1] = new_normal.y();
-        // coefficients->values[2] = new_normal.z();
-        //------------------------------------------------------------------
+            // // Apply rotation to the plane's coefficients
+            // Eigen::Vector3f new_normal = rotation_matrix * current_normal;
+            // coefficients->values[0] = new_normal.x();
+            // coefficients->values[1] = new_normal.y();
+            // coefficients->values[2] = new_normal.z();
+            //------------------------------------------------------------------
 
-        setPlaneTransform(idx, cloud_plane->points.size(), coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
-                          centroid, minp, maxp);
+            setPlaneTransform(idx, cloud_plane->points.size(), coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
+                              centroid, minp, maxp);
 
-        // Remove the planar inliers, extract the rest
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZRGB>);
-        extract.setNegative(true);
-        extract.filter(*cloud_f);
-        *cloud = *cloud_f;
-        idx++;
+            // Remove the planar inliers, extract the rest
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZRGB>);
+            extract.setNegative(true);
+            extract.filter(*cloud_f);
+            *cloud = *cloud_f;
+            idx++;
+        }
     }
     walls_info_pub.publish(walls_info);
 }
@@ -429,6 +434,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     {
         wall.header.frame_id = "floor";
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "floor"));
+        walls_info.walls[0] = wall;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[0] < getCameraPose().at<float>(0, 3) &&
@@ -437,6 +443,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     {
         wall.header.frame_id = "left_wall";
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "left_wall"));
+        walls_info.walls[1] = wall;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[0] > getCameraPose().at<float>(0, 3) &&
@@ -445,6 +452,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     {
         wall.header.frame_id = "right_wall";
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "right_wall"));
+        walls_info.walls[2] = wall;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[1] > getCameraPose().at<float>(1, 3) &&
@@ -453,6 +461,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     {
         wall.header.frame_id = "front_wall";
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "front_wall"));
+        walls_info.walls[3] = wall;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[1] < getCameraPose().at<float>(1, 3) &&
@@ -461,13 +470,15 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     {
         wall.header.frame_id = "back_wall";
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "back_wall"));
+        walls_info.walls[4] = wall;
     }
     else
     {
         wall.header.frame_id = "ceiling_floor";
         br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, "ceiling_wall"));
+        walls_info.walls[5] = wall;
     }
-    walls_info.walls[id] = wall;
+    // walls_info.walls[id] = wall;
 }
 
 visualization_msgs::Marker VivavisVision::addVisualObject(int id, Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p,
