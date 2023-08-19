@@ -234,20 +234,12 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     }
 
     *cloud_planes += *cloud_temp_planes;
-    // *cloud_planes += *voxel_grid_subsample(cloud_temp_planes, 0.2);
     pcl::copyPointCloud(*voxel_grid_subsample(cloud_planes, 0.2), *cloud_planes);
-    ROS_INFO_STREAM("cloud_planes " << cloud_planes->points.size());
+    // ROS_INFO_STREAM("cloud_planes " << cloud_planes->points.size());
 
-    for (auto &w : walls_info.walls)
-    {
-        *cloud_obstacles += *filterCloseWall(cloud_temp_obstacles,
-                                             w.a, w.b, w.c, w.d,
-                                             0.5);
-    }
-
-    // *cloud_obstacles += *cloud_temp_obstacles;
-    // cloud_obstacles = voxel_grid_subsample(cloud_temp_obstacles, 0.2);
+    *cloud_obstacles += *cloud_temp_obstacles;
     pcl::copyPointCloud(*voxel_grid_subsample(cloud_obstacles, 0.15), *cloud_obstacles);
+
     createVisualObstacles(cloud_obstacles); // create markers for obstacles
 
     // pub walls
@@ -496,6 +488,38 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr VivavisVision::filterCloseWall(pcl::Point
             if (std::fabs(a * pts.x + b * pts.y + c * pts.z + d) > threshold)
             {
                 // ROS_INFO_STREAM("FILTER");
+                pcl::PointXYZRGB out_points;
+                out_points.x = pts.x;
+                out_points.y = pts.y;
+                out_points.z = pts.z;
+                out_points.r = pts.r;
+                out_points.g = pts.g;
+                out_points.b = pts.b;
+
+                cld->push_back(out_points);
+            }
+        }
+    }
+    return cld;
+}
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr VivavisVision::filterCloseWall(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &obstacles,
+                                                                      Eigen::Vector4f centroid,
+                                                                      float threshold)
+{
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cld(new pcl::PointCloud<pcl::PointXYZRGB>());
+    if (obstacles->points.size() > 0)
+    {
+        for (auto pts : obstacles->points)
+        {
+            std::cout << std::sqrt((pts.x - centroid[0]) * (pts.x - centroid[0]) +
+                                   (pts.y - centroid[1]) * (pts.y - centroid[1]) +
+                                   (pts.z - centroid[2]) * (pts.z - centroid[2]))
+                      << std::endl;
+            if (std::sqrt((pts.x - centroid[0]) * (pts.x - centroid[0]) +
+                          (pts.y - centroid[1]) * (pts.y - centroid[1]) +
+                          (pts.z - centroid[2]) * (pts.z - centroid[2])) > threshold)
+            {
                 pcl::PointXYZRGB out_points;
                 out_points.x = pts.x;
                 out_points.y = pts.y;

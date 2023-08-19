@@ -124,4 +124,8 @@ private:
                                                            float c,
                                                            float d,
                                                            float threshold);
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr filterCloseWall(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &obstacles,
+                                                           Eigen::Vector4f centroid,
+                                                           float threshold);
 };
