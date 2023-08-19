@@ -118,7 +118,6 @@ VivavisVision::voxel_grid_subsample(const boost::shared_ptr<pcl::PointCloud<Poin
     boost::shared_ptr<pcl::PointCloud<PointT>> final_cld(new pcl::PointCloud<PointT>);
     sor.filter(*final_cld);
     return final_cld;
-    // return sor.getRemovedIndices();
 }
 
 void VivavisVision::makeEllipsoid(pcl::PointCloud<pcl::PointXYZRGB> &cloud, const Eigen::Vector3f radii, const Eigen::Vector4f &c)
@@ -193,7 +192,7 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 
     int idx = 0;
     int nr_points = (int)cloud->size();
-    while (cloud->size() > 0.05 * nr_points)
+    while (cloud->size() > 0.1 * nr_points)
     {
         // Segment the largest planar component from the remaining cloud
         seg.setInputCloud(cloud);
@@ -239,9 +238,16 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     pcl::copyPointCloud(*voxel_grid_subsample(cloud_planes, 0.2), *cloud_planes);
     ROS_INFO_STREAM("cloud_planes " << cloud_planes->points.size());
 
-    *cloud_obstacles += *cloud_temp_obstacles;
+    for (auto &w : walls_info.walls)
+    {
+        *cloud_obstacles += *filterCloseWall(cloud_temp_obstacles,
+                                             w.a, w.b, w.c, w.d,
+                                             0.5);
+    }
+
+    // *cloud_obstacles += *cloud_temp_obstacles;
     // cloud_obstacles = voxel_grid_subsample(cloud_temp_obstacles, 0.2);
-    pcl::copyPointCloud(*voxel_grid_subsample(cloud_obstacles, 0.2), *cloud_obstacles);
+    pcl::copyPointCloud(*voxel_grid_subsample(cloud_obstacles, 0.15), *cloud_obstacles);
     createVisualObstacles(cloud_obstacles); // create markers for obstacles
 
     // pub walls
@@ -481,7 +487,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr VivavisVision::filterCloseWall(pcl::Point
                                                                       float threshold)
 {
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cld(new pcl::PointCloud<pcl::PointXYZRGB>());
-    if (obstacles->points.size() > 0)
+    if (obstacles->points.size() > 0 && a != 0 && b != 0 && c != 0 && d != 0)
     {
         for (auto pts : obstacles->points)
         {
@@ -489,6 +495,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr VivavisVision::filterCloseWall(pcl::Point
             // std:: cout << std::fabs(a * pts.x + b * pts.y + c * pts.z + d)  << std::endl;
             if (std::fabs(a * pts.x + b * pts.y + c * pts.z + d) > threshold)
             {
+                // ROS_INFO_STREAM("FILTER");
                 pcl::PointXYZRGB out_points;
                 out_points.x = pts.x;
                 out_points.y = pts.y;
