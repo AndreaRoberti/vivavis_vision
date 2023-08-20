@@ -36,6 +36,10 @@ This documentation provides an overview of the parameters and publishers/subscri
 
 - `min_object_cluster_size` (int, default: 1): The minimum size of an object cluster.
 
+## Subscribers
+
+- `cloud_sub` (topic: `in_cloud`): Subscribes to a point cloud on the `in_cloud` topic. Invokes the `cloudCallback` method.
+
 ## Publishers
 
 ### Point Cloud Publishers
@@ -60,10 +64,6 @@ This documentation provides an overview of the parameters and publishers/subscri
 
 - `human_ws_pub` (topic: `human_ws`): Publishes a `visualization_msgs::Marker` message for visualizing human workspace.
 
-## Subscribers
-
-- `cloud_sub` (topic: `in_cloud`): Subscribes to a point cloud on the `in_cloud` topic. Invokes the `cloudCallback` method.
-
 ## WallInfo Message
 
 The `WallInfoArray` is an array of 6 elements [floor, left, right, front, back, ceiling] of `WallInfo`, each defined by the following structure:
@@ -76,6 +76,3 @@ The `WallInfoArray` is an array of 6 elements [floor, left, right, front, back, 
 - `float64 num_points`
 - `int64 color_id`
 - `geometry_msgs/Pose pose`
-
-For further details about the `WallInfo` message and its components, please refer to the message definitions in your codebase.
-
