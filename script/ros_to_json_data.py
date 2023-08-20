@@ -42,9 +42,12 @@ class ROS2JsonData:
         self.json_walls_equations_pub = rospy.Publisher('out/json_walls_equations', String, queue_size=100)
         self.json_human_workspace_pub = rospy.Publisher('out/json_human_workspace', String, queue_size=100)
 
+        self.walls_info = WallInfoArray()
 
     def wall_info_callback(self, data):
-        print("WALL INFO CALLBACK")
+        self.walls_info = data
+        print(self.walls_info)
+        # floor left right front back ceiling
 
 
     # control loop, executed each "self.timer_period" seconds
@@ -60,34 +63,41 @@ class ROS2JsonData:
         # self.publish_human_workspace()
 
         t2 = rospy.get_time()
-        print("[control loop] Ended", t2-t1)   
+        print("[control loop] Ended", t2-t1)
+
+    def update(self):
+        self.publish_json_df()
 
 
+
+    # self.walls_ordered_eq_params -> 0 = left; 1 = right; 2 = ceiling; 3 = floor; 4 = front; 5 = back
     def publish_json_df(self):
-        print("publish_json_df")
         # Create pandas dataframe from list "self.walls_ordered_eq_params"
         json_data = []
         wall_names = ['left','right', 'ceiling', 'floor', 'front', 'back']
+
+        for w in range(len(self.walls_info.walls)):
+            print(w)
         
-        if self.print: 
-            print("Detected walls and distances:")        
+        # if self.print: 
+        #     print("Detected walls and distances:")        
 
 
-        for k,eq in enumerate(self.walls_ordered_eq_params):
-            if eq != []:
-                a,b,c,d,num_points, plane_center, color_id = list(eq)
-                center_x, center_y, center_z = plane_center               
+        # for k,eq in enumerate(self.walls_ordered_eq_params):
+        #     if eq != []:
+        #         a,b,c,d,num_points, plane_center, color_id = list(eq)
+        #         center_x, center_y, center_z = plane_center               
 
-                if len(self.act_cam_position) > 0:
-                    cam_x,cam_y,cam_z = self.act_cam_position
-                    shortest_dist = self.shortest_point_plane_distance(cam_x,cam_y,cam_z, a,b,c,d)
-                else:
-                    shortest_dist = None  #tf hasn't been received yet
+        #         if len(self.act_cam_position) > 0:
+        #             cam_x,cam_y,cam_z = self.act_cam_position
+        #             shortest_dist = self.shortest_point_plane_distance(cam_x,cam_y,cam_z, a,b,c,d)
+        #         else:
+        #             shortest_dist = None  #tf hasn't been received yet
 
-                print(wall_names[k], "wall; distance:", shortest_dist, "m")
-                newlist = [wall_names[k], a,b,c,d, shortest_dist, num_points, center_x, center_y, center_z, color_id]
-                json_data.append(newlist)
-        print("") 
+        #         print(wall_names[k], "wall; distance:", shortest_dist, "m")
+        #         newlist = [wall_names[k], a,b,c,d, shortest_dist, num_points, center_x, center_y, center_z, color_id]
+        #         json_data.append(newlist)
+        # print("") 
 
         if len(json_data) > 0:        
             df_json = pd.DataFrame(json_data, columns=["wall_type", "a", "b", "c", "d", "shortest_distance", "num_points", "plane_center_x", "plane_center_y", "plane_center_z", "color_id"])
@@ -104,5 +114,12 @@ class ROS2JsonData:
 
 if __name__ == '__main__':
     
-    node = ROS2JsonData()
-    rospy.spin()
+    ros_json_data = ROS2JsonData()
+
+    rate = 100 # Hz
+    ros_rate = rospy.Rate(rate)
+			  
+    while not rospy.is_shutdown():
+        # ros_json_data.control_loop()
+        ros_json_data.update()
+        ros_rate.sleep()

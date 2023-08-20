@@ -363,7 +363,6 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     wall.c = c;
     wall.d = d;
     wall.num_points = num_points;
-    wall.color_id = id;
     wall.header.stamp = ros::Time::now();
     wall.pose.position.x = centroid(0);
     wall.pose.position.y = centroid(1);
@@ -377,6 +376,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     {
         wall.header.frame_id = "floor";
         walls_info.walls[0] = wall;
+        wall.color_id = 0;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[0] < getCameraPose().at<float>(0, 3) &&
@@ -385,6 +385,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     {
         wall.header.frame_id = "left_wall";
         walls_info.walls[1] = wall;
+        wall.color_id = 1;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[0] > getCameraPose().at<float>(0, 3) &&
@@ -393,6 +394,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     {
         wall.header.frame_id = "right_wall";
         walls_info.walls[2] = wall;
+        wall.color_id = 2;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[1] > getCameraPose().at<float>(1, 3) &&
@@ -401,6 +403,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     {
         wall.header.frame_id = "front_wall";
         walls_info.walls[3] = wall;
+        wall.color_id = 3;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[1] < getCameraPose().at<float>(1, 3) &&
@@ -409,6 +412,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     {
         wall.header.frame_id = "back_wall";
         walls_info.walls[4] = wall;
+        wall.color_id = 4;
     }
     else
     {
@@ -416,6 +420,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
         {
             wall.header.frame_id = "ceiling_wall";
             walls_info.walls[5] = wall;
+            wall.color_id = 5;
         }
     }
     br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, wall.header.frame_id));
