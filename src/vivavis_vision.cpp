@@ -383,44 +383,44 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
              std::fabs(a) > 0.9 &&
              std::fabs(a) < 1.1)
     {
-        wall.header.frame_id = "left_wall";
-        walls_info.walls[1] = wall;
+        wall.header.frame_id = "left";
         wall.color_id = 1;
+        walls_info.walls[1] = wall;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[0] > getCameraPose().at<float>(0, 3) &&
              std::fabs(a) > 0.9 &&
              std::fabs(a) < 1.1)
     {
-        wall.header.frame_id = "right_wall";
-        walls_info.walls[2] = wall;
+        wall.header.frame_id = "right";
         wall.color_id = 2;
+        walls_info.walls[2] = wall;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[1] > getCameraPose().at<float>(1, 3) &&
              std::fabs(b) > 0.9 &&
              std::fabs(b) < 1.1)
     {
-        wall.header.frame_id = "front_wall";
-        walls_info.walls[3] = wall;
+        wall.header.frame_id = "front";
         wall.color_id = 3;
+        walls_info.walls[3] = wall;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[1] < getCameraPose().at<float>(1, 3) &&
              std::fabs(b) > 0.9 &&
              std::fabs(b) < 1.1)
     {
-        wall.header.frame_id = "back_wall";
-        walls_info.walls[4] = wall;
+        wall.header.frame_id = "back";
         wall.color_id = 4;
+        walls_info.walls[4] = wall;
     }
     else
     {
         if (radiansToDegrees(angle) < floor_threshold)
         {
-            wall.header.frame_id = "ceiling_wall";
-            walls_info.walls[5] = wall;
+            wall.header.frame_id = "ceiling";
             wall.color_id = 5;
+            walls_info.walls[5] = wall;
         }
     }
     br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, wall.header.frame_id));

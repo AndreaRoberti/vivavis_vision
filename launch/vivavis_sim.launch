@@ -35,12 +35,12 @@
         <!-- <remap from="walls_cloud" to="/planes"/> -->
 
 
-        <remap from="debug_pose" to="/vivavis/ellipsoid/debug_pose" />
+        <!-- <remap from="debug_pose" to="/vivavis/ellipsoid/debug_pose" /> -->
         <!-- private handler-->
-        <remap from="vivavis_vision/walls_cloud" to="/vivavis/filter_cloud" />
+        <!-- <remap from="vivavis_vision/walls_cloud" to="/vivavis/filter_cloud" />
         <remap from="vivavis_vision/out_cloud_array" to="/vivavis/cloud_array" />
         <remap from="vivavis_vision/ellipsoid" to="/vivavis/ellipsoid_data" />
-        <remap from="vivavis_vision/ellipsoid_cloud" to="/vivavis/ellipsoid_cloud" />
+        <remap from="vivavis_vision/ellipsoid_cloud" to="/vivavis/ellipsoid_cloud" /> -->
 
     </node>
 

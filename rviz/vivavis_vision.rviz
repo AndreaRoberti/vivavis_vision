@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /CURRENT_WALLS1
         - /VISUAL_OBS1
         - /TF1/Frames1
         - /HUMAN_WS1
@@ -161,7 +162,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /vivavis/filter_cloud
+      Topic: /vivavis_vision/walls_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -237,8 +238,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        back_wall:
-          Value: true
         camera_color_optical_frame:
           Value: true
         camera_depth_optical_frame:
@@ -247,11 +246,9 @@ Visualization Manager:
           Value: false
         floor:
           Value: true
-        front_wall:
+        left:
           Value: true
-        left_wall:
-          Value: true
-        right_wall:
+        right:
           Value: true
         world:
           Value: true
@@ -263,8 +260,6 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          back_wall:
-            {}
           camera_link:
             camera_color_optical_frame:
               {}
@@ -272,11 +267,9 @@ Visualization Manager:
               {}
           floor:
             {}
-          front_wall:
+          left:
             {}
-          left_wall:
-            {}
-          right_wall:
+          right:
             {}
       Update Interval: 0
       Value: true
