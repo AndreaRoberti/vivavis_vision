@@ -20,6 +20,9 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     private_nh_.param<int>("max_object_cluster_size", max_object_cluster_size_, 500000);
     private_nh_.param<int>("min_object_cluster_size", min_object_cluster_size_, 1);
 
+    // Input
+    cloud_sub = nh_.subscribe("in_cloud", 1, &VivavisVision::cloudCallback, this);  
+    // Output
     cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("walls_cloud", 1);
     cloud_obs_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("obstacles_cloud", 1);
     ellipsoid_cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("ellipsoid_cloud", 1);
@@ -33,7 +36,6 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     human_ws_pub = private_nh_.advertise<visualization_msgs::Marker>("human_ws", 1, true);
 
     pose_pub = nh_.advertise<geometry_msgs::PoseArray>("debug_pose", 1);
-    cloud_sub = nh_.subscribe("in_cloud", 1, &VivavisVision::cloudCallback, this);
 
     br = new tf::TransformBroadcaster();
     walls_info.walls.resize(6);
