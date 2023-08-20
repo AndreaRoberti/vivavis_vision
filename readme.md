@@ -6,10 +6,20 @@ This documentation provides an overview of the parameters and publishers/subscri
 
 - Clone this repo in your *catkin_ws*
 
-`git clone https://github.com/AndreaRoberti/vivavis_vision.git`
+```bash
+git clone https://github.com/AndreaRoberti/vivavis_vision.git`
+```
 
-- `catkin_build`
+- build and source
 
+```bash
+catkin build
+source devel/setup.bash
+```
+
+## Example
+
+    ![](./doc/example_scene.gif)
 ## Parameters
 
 ### Visualization Frames
