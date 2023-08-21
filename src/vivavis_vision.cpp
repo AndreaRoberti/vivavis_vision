@@ -21,7 +21,7 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     private_nh_.param<int>("min_object_cluster_size", min_object_cluster_size_, 1);
 
     // Input
-    cloud_sub = nh_.subscribe("in_cloud", 1, &VivavisVision::cloudCallback, this);  
+    cloud_sub = nh_.subscribe("in_cloud", 1, &VivavisVision::cloudCallback, this);
     // Output
     cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("walls_cloud", 1);
     cloud_obs_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("obstacles_cloud", 1);
@@ -343,7 +343,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     float dot_product = plane_normal.dot(up_vector);
     float angle = acos(dot_product);
 
-    visualize_walls.markers.push_back(addVisualObject(id, centroid, min_p, max_p, Eigen::Vector4f(0.0, 0.0, 1.0, 0.5), plane_quaternion));
+    visualize_walls.markers.push_back(addVisualObject(id, centroid, min_p, max_p, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5), plane_quaternion));
     visual_walls_pub.publish(visualize_walls);
 
     float wall_threshold = 95;
@@ -461,6 +461,8 @@ void VivavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
 {
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> objects = clusterObject(cloud, num_obj);
     // ROS_INFO_STREAM(ros::this_node::getName() << " HAS " << num_obj << "  objects");
+
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> final_obs;
     if (num_obj > 0)
     {
         visualize_obstacles.markers.clear();
@@ -472,8 +474,38 @@ void VivavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
             Eigen::Vector4f c;
             pcl::compute3DCentroid(*objects.at(i), c);
 
-            visualize_obstacles.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 1.0, 0.0, 0.5)));
-            visual_obstacles_pub.publish(visualize_obstacles);
+            for (auto &w : walls_info.walls)
+            {
+                // find the closest
+                if (std::sqrt((w.pose.position.x - c[0]) *
+                                  (w.pose.position.x - c[0]) +
+                              (w.pose.position.y - c[1]) *
+                                  (w.pose.position.y - c[1]) +
+                              (w.pose.position.z - c[2]) +
+                              (w.pose.position.z - c[2])) < 0.5)
+                {
+
+                    final_obs.push_back(filterCloseWall(cloud_obstacles,
+                                                        w.a, w.b, w.c, w.d,
+                                                        0.3));
+                }
+            }
+
+            if (final_obs.size() > 0)
+            {
+                for (auto &p : final_obs)
+                {
+                    Eigen::Vector4f min_pt, max_pt;
+                    pcl::getMinMax3D(*p, min_pt, max_pt);
+
+                    Eigen::Vector4f c;
+                    pcl::compute3DCentroid(*p, c);
+
+                    visualize_obstacles.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5)));
+
+                    visual_obstacles_pub.publish(visualize_obstacles);
+                }
+            }
         }
     }
 }
@@ -550,7 +582,7 @@ void VivavisVision::update()
     {
         human_ws_pub.publish(
             addVisualObject(0, Eigen::Vector4f(getCameraPose().at<float>(0, 3), getCameraPose().at<float>(1, 3), getCameraPose().at<float>(2, 3), 0),
-                            Eigen::Vector4f(0.3, 0.3, 1.0, 0.5), Eigen::Vector4f(0.3, 0.3, 1.0, 0.5), Eigen::Vector4f(1.0, 0, 0, 0.5), Eigen::Quaternionf(0, 0, 0, 1.0))
+                            Eigen::Vector4f(0.3, 0.3, 1.0, 0.5), Eigen::Vector4f(0.3, 0.3, 1.0, 0.5), Eigen::Vector4f(0.0, 1.0, 0.0, 0.5), Eigen::Quaternionf(0, 0, 0, 1.0))
 
         );
         map_cld_ptr = voxel_grid_subsample(xyz_cld_ptr, orig_cld_voxel_size);

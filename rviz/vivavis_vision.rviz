@@ -224,13 +224,14 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /vivavis_vision/visual_obstacles
       Name: VISUAL_OBS
       Namespaces:
-        {}
+        0: true
+        1: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/TF
       Enabled: true
       Filter (blacklist): ""
@@ -245,6 +246,8 @@ Visualization Manager:
         camera_link:
           Value: false
         floor:
+          Value: true
+        front:
           Value: true
         left:
           Value: true
@@ -266,6 +269,8 @@ Visualization Manager:
             camera_depth_optical_frame:
               {}
           floor:
+            {}
+          front:
             {}
           left:
             {}
@@ -317,7 +322,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 8.525261878967285
+      Distance: 5.112560272216797
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -325,17 +330,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.2441622018814087
-        Y: 0.5449150204658508
-        Z: 0.6343797445297241
+        X: -0.06306129693984985
+        Y: 0.7867427468299866
+        Z: 1.0435930490493774
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6403982639312744
+      Pitch: 0.635398268699646
       Target Frame: <Fixed Frame>
-      Yaw: 4.323596000671387
+      Yaw: 4.118593692779541
     Saved: ~
 Window Geometry:
   Displays:
