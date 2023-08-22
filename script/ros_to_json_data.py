@@ -10,6 +10,8 @@ from std_msgs.msg import String, Time, Bool
 from rosgraph_msgs.msg import Clock
 from geometry_msgs.msg import Point
 
+from geometry_msgs.msg import PoseArray
+
 # Python libraries
 import numpy as np
 import open3d as o3d
@@ -35,24 +37,39 @@ class ROS2JsonData:
         
         self.act_cam_position = []     # store the ACTUAL camera position vector[x,y,z]
         self.walls_ordered_eq_params = [[],[],[],[],[],[]]   # ORDERED equations' parameters of "walls" found inside the scene
-       
-        
-        
-        rospy.Subscriber("vivavis_vision/walls_info", WallInfoArray, self.wall_info_callback)
+                       
         self.json_walls_equations_pub = rospy.Publisher('out/json_walls_equations', String, queue_size=100)
         self.json_human_workspace_pub = rospy.Publisher('out/json_human_workspace', String, queue_size=100)
+
+        rospy.Subscriber("vivavis_vision/walls_info", WallInfoArray, self.wall_info_callback)
+        rospy.Subscriber('pose_array_topic', PoseArray, self.obstacles_pose_array_callback)
 
         self.walls_info = WallInfoArray()
         
         self.listener = tf.TransformListener()
         self.camera_frame = 'camera_color_optical_frame'
         self.fixed_frame = 'world'
+
+        self.list_of_ids = [str(uuid.uuid4()) for k in range(1000)]
         
         self.act_cam_position = []     # store the ACTUAL camera position vector[x,y,z]
         self.act_cam_orientation = []  # store the ACTUAL camera orientation quaternion [x,y,z,w]
      
+        self.obstacles = dict()
+
     def wall_info_callback(self, data):
         self.walls_info = data
+
+    def obstacles_pose_array_callback(self, msg):
+        for i, pose in enumerate(msg.poses):
+            rospy.loginfo("Obstacle: Pose %d:\nPosition: %f, %f, %f\nOrientation: %f, %f, %f, %f",
+                          i,
+                          pose.position.x, pose.position.y, pose.position.z,
+                          pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
+
+            # self.obstacles['id' +str(i)] = [pose.position.x, pose.position.y, pose.position.z]
+            self.obstacles[i] = [pose.position.x, pose.position.y, pose.position.z]
+
 
     def update(self):
         self.getCameraPose()
@@ -68,6 +85,15 @@ class ROS2JsonData:
             # rospy.loginfo("Rotation: %s" % str(rot))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             rospy.logwarn("Transform lookup failed!")
+   
+    # Function to find distance from point to plane
+    def shortest_point_plane_distance(self, x1, y1, z1, a, b, c, d):        
+        d = abs((a * x1 + b * y1 + c * z1 + d))
+        e = (math.sqrt(a * a + b * b + c * c))
+        # print (e)
+        dist = d/e
+        # print("Perpendicular distance is", dist)
+        return dist
 
     # 0 = left; 1 = right; 2 = ceiling; 3 = floor; 4 = front; 5 = back
     # Create pandas dataframe
@@ -93,14 +119,17 @@ class ROS2JsonData:
             df_json = pd.DataFrame(json_data, columns=["wall_type", "a", "b", "c", "d", "shortest_distance", "num_points", "plane_center_x", "plane_center_y", "plane_center_z", "color_id"])
             self.json_walls_equations_pub.publish(str(df_json.to_json(orient='index')))
 
-    # Function to find distance from point to plane
-    def shortest_point_plane_distance(self, x1, y1, z1, a, b, c, d):        
-        d = abs((a * x1 + b * y1 + c * z1 + d))
-        e = (math.sqrt(a * a + b * b + c * c))
-        # print (e)
-        dist = d/e
-        # print("Perpendicular distance is", dist)
-        return dist
+
+    def publish_human_workspace(self):
+        json_data = []
+
+        # for near_p in nearest_obst_pts:
+            # json_data.append([self.list_of_ids[clust_id], strTmapcam, center_str, nearest_str, clust_type])
+
+        if len(json_data) > 0:
+            df_json = pd.DataFrame(json_data, columns=["unique_id", "T_map_cam", "center_3d", "nearest_3d", "type"])
+            self.json_human_workspace_pub.publish(str(df_json.to_json(orient='index')))
+              
 
 if __name__ == '__main__':
     

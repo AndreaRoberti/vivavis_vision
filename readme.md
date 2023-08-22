@@ -74,6 +74,11 @@ source devel/setup.bash
 
 - `human_ws_pub` (topic: `human_ws`): Publishes a `visualization_msgs::Marker` message for visualizing human workspace.
 
+### Debug Publisher
+
+- `pose_pub` (topic: `debug_pose`): Publishes a `geometry_msgs::PoseArray` message for debugging poses.
+
+
 ## WallInfo Message
 
 The `WallInfoArray` is an array of 6 elements [floor, left, right, front, back, ceiling] of `WallInfo`, each defined by the following structure:

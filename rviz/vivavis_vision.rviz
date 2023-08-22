@@ -6,11 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /CURRENT_WALLS1
-        - /VISUAL_OBS1
         - /TF1/Frames1
-        - /HUMAN_WS1
-        - /PoseArray1
       Splitter Ratio: 0.49705880880355835
     Tree Height: 719
   - Class: rviz/Selection
@@ -229,7 +225,6 @@ Visualization Manager:
       Marker Topic: /vivavis_vision/visual_obstacles
       Name: VISUAL_OBS
       Namespaces:
-        0: true
         1: true
       Queue Size: 100
       Value: true
@@ -340,7 +335,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.112560272216797
+      Distance: 6.413195610046387
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
