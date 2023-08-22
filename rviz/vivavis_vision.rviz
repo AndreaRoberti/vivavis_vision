@@ -10,6 +10,7 @@ Panels:
         - /VISUAL_OBS1
         - /TF1/Frames1
         - /HUMAN_WS1
+        - /PoseArray1
       Splitter Ratio: 0.49705880880355835
     Tree Height: 719
   - Class: rviz/Selection
@@ -294,6 +295,23 @@ Visualization Manager:
         0: true
       Queue Size: 100
       Value: true
+    - Alpha: 1
+      Arrow Length: 0.30000001192092896
+      Axes Length: 0.30000001192092896
+      Axes Radius: 0.009999999776482582
+      Class: rviz/PoseArray
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.07000000029802322
+      Head Radius: 0.029999999329447746
+      Name: PoseArray
+      Queue Size: 10
+      Shaft Length: 0.23000000417232513
+      Shaft Radius: 0.009999999776482582
+      Shape: Axes
+      Topic: /debug_pose
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -338,9 +356,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.635398268699646
+      Pitch: 0.5703983306884766
       Target Frame: <Fixed Frame>
-      Yaw: 4.118593692779541
+      Yaw: 4.133591651916504
     Saved: ~
 Window Geometry:
   Displays:

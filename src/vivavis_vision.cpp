@@ -463,11 +463,15 @@ void VivavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
     // ROS_INFO_STREAM(ros::this_node::getName() << " HAS " << num_obj << "  objects");
 
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> final_obs;
+
     if (num_obj > 0)
     {
+        geometry_msgs::PoseArray obstacles_poses;
+        obstacles_poses.header.frame_id = fixed_frame;
         visualize_obstacles.markers.clear();
         for (size_t i = 0; i < num_obj; i++)
         {
+            bool discard = false;
             Eigen::Vector4f min_pt, max_pt;
             pcl::getMinMax3D(*objects.at(i), min_pt, max_pt);
 
@@ -476,36 +480,74 @@ void VivavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
 
             for (auto &w : walls_info.walls)
             {
-                // find the closest
-                if (std::sqrt((w.pose.position.x - c[0]) *
-                                  (w.pose.position.x - c[0]) +
-                              (w.pose.position.y - c[1]) *
-                                  (w.pose.position.y - c[1]) +
-                              (w.pose.position.z - c[2]) +
-                              (w.pose.position.z - c[2])) < 0.5)
+                if (std::fabs(w.a * c[0] + w.b * c[1] + w.c * c[2] + w.d) < 0.2)
                 {
-
-                    final_obs.push_back(filterCloseWall(cloud_obstacles,
-                                                        w.a, w.b, w.c, w.d,
-                                                        0.3));
+                    if (!w.header.frame_id.empty() && !discard)
+                    {
+                        ROS_INFO_STREAM(" object " << i << "  is on plane " << w.header.frame_id);
+                        discard = true;
+                    }
                 }
             }
-
-            if (final_obs.size() > 0)
+            if (!discard)
             {
-                for (auto &p : final_obs)
-                {
-                    Eigen::Vector4f min_pt, max_pt;
-                    pcl::getMinMax3D(*p, min_pt, max_pt);
+                ROS_INFO_STREAM(" false disc , pub object " << i);
+                geometry_msgs::Pose pose;
+                pose.position.x = c[0];
+                pose.position.y = c[1];
+                pose.position.z = c[2];
+                pose.orientation.x = pose.orientation.y = pose.orientation.z = 0;
+                pose.orientation.w = 1;
+                obstacles_poses.poses.push_back(pose);
+                pose_pub.publish(obstacles_poses);
 
-                    Eigen::Vector4f c;
-                    pcl::compute3DCentroid(*p, c);
-
-                    visualize_obstacles.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5)));
-
-                    visual_obstacles_pub.publish(visualize_obstacles);
-                }
+                visualize_obstacles.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5)));
+                visual_obstacles_pub.publish(visualize_obstacles);
             }
+            /*
+                        for (auto &w : walls_info.walls)
+                        {
+                            // find the closest
+                            if (std::sqrt((w.pose.position.x - c[0]) *
+                                              (w.pose.position.x - c[0]) +
+                                          (w.pose.position.y - c[1]) *
+                                              (w.pose.position.y - c[1]) +
+                                          (w.pose.position.z - c[2]) +
+                                          (w.pose.position.z - c[2])) < 1.0)
+                            {
+
+                                auto temp_final_obs = filterCloseWall(cloud_obstacles,
+                                                                      w.a, w.b, w.c, w.d,
+                                                                      0.3);
+                                final_obs.push_back(temp_final_obs);
+                                *cloud_final_obstacles += *temp_final_obs;
+
+                                pcl::copyPointCloud(*voxel_grid_subsample(cloud_final_obstacles, 0.15), *cloud_final_obstacles);
+                            }
+                        }
+
+                        if (final_obs.size() > 0)
+                        {
+
+                            sensor_msgs::PointCloud2 cloud_msg_2;
+                            pcl::toROSMsg(*cloud_final_obstacles, cloud_msg_2);
+                            cloud_msg_2.header.frame_id = fixed_frame; // optical_frame;
+                            cloud_obs_pub.publish(cloud_msg_2);
+
+                            for (auto &p : final_obs)
+                            {
+                                Eigen::Vector4f min_pt, max_pt;
+                                pcl::getMinMax3D(*p, min_pt, max_pt);
+
+                                Eigen::Vector4f c;
+                                pcl::compute3DCentroid(*p, c);
+
+                                visualize_obstacles.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5)));
+
+                                visual_obstacles_pub.publish(visualize_obstacles);
+                            }
+                        }
+                        */
         }
     }
 }
@@ -524,7 +566,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr VivavisVision::filterCloseWall(pcl::Point
         {
             // < T, IS WALL otherwise no
             // std:: cout << std::fabs(a * pts.x + b * pts.y + c * pts.z + d)  << std::endl;
-            if (std::fabs(a * pts.x + b * pts.y + c * pts.z + d) > threshold)
+            if (std::fabs(a * pts.x + b * pts.y + c * pts.z + d) < threshold)
             {
                 // ROS_INFO_STREAM("FILTER");
                 pcl::PointXYZRGB out_points;
