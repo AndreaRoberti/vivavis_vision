@@ -112,11 +112,9 @@ template <typename PointT>
 boost::shared_ptr<pcl::PointCloud<PointT>>
 VivavisVision::voxel_grid_subsample(const boost::shared_ptr<pcl::PointCloud<PointT>> &cld_in, float cell_size)
 {
-    // ex_VoxelGrid sor;
     pcl::VoxelGrid<PointT> sor;
     sor.setInputCloud(cld_in);
     sor.setLeafSize(cell_size, cell_size, cell_size); // leaf size in meters
-
     boost::shared_ptr<pcl::PointCloud<PointT>> final_cld(new pcl::PointCloud<PointT>);
     sor.filter(*final_cld);
     return final_cld;
@@ -258,78 +256,6 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     walls_info_pub.publish(walls_info);
 }
 
-// [UNUSED]
-void VivavisVision::processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
-{
-    // Create the segmentation object for the planar model and set all the parameters
-    pcl::SACSegmentation<pcl::PointXYZRGB> seg;
-    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_temp_obstacles(new pcl::PointCloud<pcl::PointXYZRGB>());
-    seg.setOptimizeCoefficients(true);
-    seg.setModelType(pcl::SACMODEL_PLANE);
-    seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setMaxIterations(100);
-    seg.setDistanceThreshold(0.1);
-
-    int idx = 0;
-    int nr_points = (int)cloud->size();
-    // while (cloud->size() > 0)
-    while (cloud->size() > 0.05 * nr_points)
-    {
-        // Segment the largest planar component from the remaining cloud
-        seg.setInputCloud(cloud);
-        seg.segment(*inliers, *coefficients);
-        if (inliers->indices.size() == 0)
-        {
-            std::cout << "Could not estimate a planar model for the given dataset." << std::endl;
-        }
-        else
-        {
-            // Extract the planar inliers from the input cloud
-            pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-            extract.setInputCloud(cloud);
-            extract.setIndices(inliers);
-            extract.setNegative(false);
-
-            // Get the points associated with the planar surface
-            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGB>());
-            extract.filter(*cloud_plane);
-
-            // compute bounding box and centroid
-            Eigen::Vector4f centroid, minp, maxp;
-            pcl::getMinMax3D(*cloud_plane, minp, maxp);
-            pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
-
-            setPlaneTransform(idx, cloud_plane->points.size(), coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
-                              centroid, minp, maxp);
-
-            //*cloud_temp_obstacles += *filterCloseWall(cloud_obstacles,
-            //                                          coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
-            //                                          1.0);
-
-            // Remove the planar inliers, extract the rest
-            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZRGB>);
-            extract.setNegative(true);
-            extract.filter(*cloud_f);
-            *cloud = *cloud_f;
-            idx++;
-        }
-    }
-    walls_info_pub.publish(walls_info);
-
-    // if (cloud_temp_obstacles->points.size() > 0)
-    // {
-    // pcl::copyPointCloud(*voxel_grid_subsample(cloud_temp_obstacles, 0.2), *cloud_final_obstacles);
-    // createVisualObstacles(cloud_final_obstacles); // create markers for obstacles
-    // //pub obstacles
-    // sensor_msgs::PointCloud2 cloud_msg_2;
-    // pcl::toROSMsg(*cloud_final_obstacles, cloud_msg_2);
-    // cloud_msg_2.header.frame_id = fixed_frame;
-    // cloud_obs_pub.publish(cloud_msg_2);
-    // }
-}
-
 void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, float c, float d,
                                       Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p)
 {
@@ -461,9 +387,6 @@ void VivavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
 {
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> objects = clusterObject(cloud, num_obj);
     // ROS_INFO_STREAM(ros::this_node::getName() << " HAS " << num_obj << "  objects");
-
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> final_obs;
-
     if (num_obj > 0)
     {
         geometry_msgs::PoseArray obstacles_poses;
@@ -504,116 +427,8 @@ void VivavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
                 visualize_obstacles.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5)));
                 visual_obstacles_pub.publish(visualize_obstacles);
             }
-            /*
-                        for (auto &w : walls_info.walls)
-                        {
-                            // find the closest
-                            if (std::sqrt((w.pose.position.x - c[0]) *
-                                              (w.pose.position.x - c[0]) +
-                                          (w.pose.position.y - c[1]) *
-                                              (w.pose.position.y - c[1]) +
-                                          (w.pose.position.z - c[2]) +
-                                          (w.pose.position.z - c[2])) < 1.0)
-                            {
-
-                                auto temp_final_obs = filterCloseWall(cloud_obstacles,
-                                                                      w.a, w.b, w.c, w.d,
-                                                                      0.3);
-                                final_obs.push_back(temp_final_obs);
-                                *cloud_final_obstacles += *temp_final_obs;
-
-                                pcl::copyPointCloud(*voxel_grid_subsample(cloud_final_obstacles, 0.15), *cloud_final_obstacles);
-                            }
-                        }
-
-                        if (final_obs.size() > 0)
-                        {
-
-                            sensor_msgs::PointCloud2 cloud_msg_2;
-                            pcl::toROSMsg(*cloud_final_obstacles, cloud_msg_2);
-                            cloud_msg_2.header.frame_id = fixed_frame; // optical_frame;
-                            cloud_obs_pub.publish(cloud_msg_2);
-
-                            for (auto &p : final_obs)
-                            {
-                                Eigen::Vector4f min_pt, max_pt;
-                                pcl::getMinMax3D(*p, min_pt, max_pt);
-
-                                Eigen::Vector4f c;
-                                pcl::compute3DCentroid(*p, c);
-
-                                visualize_obstacles.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5)));
-
-                                visual_obstacles_pub.publish(visualize_obstacles);
-                            }
-                        }
-                        */
         }
     }
-}
-
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr VivavisVision::filterCloseWall(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &obstacles,
-                                                                      float a,
-                                                                      float b,
-                                                                      float c,
-                                                                      float d,
-                                                                      float threshold)
-{
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cld(new pcl::PointCloud<pcl::PointXYZRGB>());
-    if (obstacles->points.size() > 0 && a != 0 && b != 0 && c != 0 && d != 0)
-    {
-        for (auto pts : obstacles->points)
-        {
-            // < T, IS WALL otherwise no
-            // std:: cout << std::fabs(a * pts.x + b * pts.y + c * pts.z + d)  << std::endl;
-            if (std::fabs(a * pts.x + b * pts.y + c * pts.z + d) < threshold)
-            {
-                // ROS_INFO_STREAM("FILTER");
-                pcl::PointXYZRGB out_points;
-                out_points.x = pts.x;
-                out_points.y = pts.y;
-                out_points.z = pts.z;
-                out_points.r = pts.r;
-                out_points.g = pts.g;
-                out_points.b = pts.b;
-
-                cld->push_back(out_points);
-            }
-        }
-    }
-    return cld;
-}
-
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr VivavisVision::filterCloseWall(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &obstacles,
-                                                                      Eigen::Vector4f centroid,
-                                                                      float threshold)
-{
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cld(new pcl::PointCloud<pcl::PointXYZRGB>());
-    if (obstacles->points.size() > 0)
-    {
-        for (auto pts : obstacles->points)
-        {
-            std::cout << std::sqrt((pts.x - centroid[0]) * (pts.x - centroid[0]) +
-                                   (pts.y - centroid[1]) * (pts.y - centroid[1]) +
-                                   (pts.z - centroid[2]) * (pts.z - centroid[2]))
-                      << std::endl;
-            if (std::sqrt((pts.x - centroid[0]) * (pts.x - centroid[0]) +
-                          (pts.y - centroid[1]) * (pts.y - centroid[1]) +
-                          (pts.z - centroid[2]) * (pts.z - centroid[2])) > threshold)
-            {
-                pcl::PointXYZRGB out_points;
-                out_points.x = pts.x;
-                out_points.y = pts.y;
-                out_points.z = pts.z;
-                out_points.r = pts.r;
-                out_points.g = pts.g;
-                out_points.b = pts.b;
-
-                cld->push_back(out_points);
-            }
-        }
-    }
-    return cld;
 }
 
 void VivavisVision::update()
@@ -629,7 +444,6 @@ void VivavisVision::update()
         );
         map_cld_ptr = voxel_grid_subsample(xyz_cld_ptr, orig_cld_voxel_size);
         filterRoom(map_cld_ptr);
-        // processRoom(cloud_planes);
     }
 }
 

@@ -116,16 +116,4 @@ private:
     boost::shared_ptr<pcl::PointCloud<PointT>>
     voxel_grid_subsample(const boost::shared_ptr<pcl::PointCloud<PointT>> &cld_in, float cell_size);
     void filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
-    void processRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
-
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr filterCloseWall(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &obstacles,
-                                                           float a,
-                                                           float b,
-                                                           float c,
-                                                           float d,
-                                                           float threshold);
-
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr filterCloseWall(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &obstacles,
-                                                           Eigen::Vector4f centroid,
-                                                           float threshold);
 };
