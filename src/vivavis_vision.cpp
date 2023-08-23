@@ -370,16 +370,16 @@ visualization_msgs::Marker VivavisVision::addVisualObject(int id, Eigen::Vector4
     plane_marker.pose.orientation.x = orientation.x();
     plane_marker.pose.orientation.y = orientation.y();
     plane_marker.pose.orientation.z = orientation.z();
-    plane_marker.pose.position.x = centroid[0];                       // coefficients->values[0];
-    plane_marker.pose.position.y = centroid[1];                       // coefficients->values[1];
-    plane_marker.pose.position.z = centroid[2];                       // coefficients->values[2];
-    plane_marker.scale.x = std::fabs(min_p[0]) + std::fabs(max_p[0]); // Adjust the size of the visualization as needed
-    plane_marker.scale.y = std::fabs(min_p[1]) + std::fabs(max_p[1]);
-    plane_marker.scale.z = std::fabs(min_p[2]) + std::fabs(max_p[2]); // Adjust the thickness of the  visualization as needed
-    plane_marker.color.r = color[0];                                  // 1.0;
-    plane_marker.color.g = color[1];                                  // 1.0;
-    plane_marker.color.b = color[2];                                  // 0.0;
-    plane_marker.color.a = color[3];                                  // 0.5;                                       // Adjust the transparency of the visualization
+    plane_marker.pose.position.x = centroid[0]; // coefficients->values[0];
+    plane_marker.pose.position.y = centroid[1]; // coefficients->values[1];
+    plane_marker.pose.position.z = centroid[2]; // coefficients->values[2];
+    plane_marker.scale.x = 0.1 + (max_p[0] - min_p[0]); //  offset + ()
+    plane_marker.scale.y = 0.1 + (max_p[1] - min_p[1]); //  offset + ()
+    plane_marker.scale.z = 0.1 + (max_p[2] - min_p[2]); //  offset + () 
+    plane_marker.color.r = color[0];            // 1.0;
+    plane_marker.color.g = color[1];            // 1.0;
+    plane_marker.color.b = color[2];            // 0.0;
+    plane_marker.color.a = color[3];            // 0.5;                                       // Adjust the transparency of the visualization
     return plane_marker;
 }
 
@@ -439,7 +439,7 @@ void VivavisVision::update()
     {
         human_ws_pub.publish(
             addVisualObject(0, Eigen::Vector4f(getCameraPose().at<float>(0, 3), getCameraPose().at<float>(1, 3), getCameraPose().at<float>(2, 3), 0),
-                            Eigen::Vector4f(0.3, 0.3, 1.0, 0.5), Eigen::Vector4f(0.3, 0.3, 1.0, 0.5), Eigen::Vector4f(0.0, 1.0, 0.0, 0.5), Eigen::Quaternionf(0, 0, 0, 1.0))
+                            Eigen::Vector4f(0.0, 0.0, 0.0, 0.5), Eigen::Vector4f(0.5, 0.5, 1.7, 0.5), Eigen::Vector4f(0.0, 1.0, 0.0, 0.5), Eigen::Quaternionf(0, 0, 0, 1.0))
 
         );
         map_cld_ptr = voxel_grid_subsample(xyz_cld_ptr, orig_cld_voxel_size);
