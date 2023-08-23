@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /TF1/Frames1
+        - /PoseArray1
       Splitter Ratio: 0.49705880880355835
     Tree Height: 719
   - Class: rviz/Selection
@@ -304,7 +305,7 @@ Visualization Manager:
       Shaft Length: 0.23000000417232513
       Shaft Radius: 0.009999999776482582
       Shape: Axes
-      Topic: /debug_pose
+      Topic: /vivavis_vision/obstacles_pose
       Unreliable: false
       Value: true
   Enabled: true

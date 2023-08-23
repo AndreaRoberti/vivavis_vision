@@ -35,7 +35,7 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     visual_obstacles_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_obstacles", 1, true);
     human_ws_pub = private_nh_.advertise<visualization_msgs::Marker>("human_ws", 1, true);
 
-    pose_pub = nh_.advertise<geometry_msgs::PoseArray>("debug_pose", 1);
+    pose_pub = private_nh_.advertise<geometry_msgs::PoseArray>("obstacles_pose", 1);
 
     br = new tf::TransformBroadcaster();
     walls_info.walls.resize(6);
