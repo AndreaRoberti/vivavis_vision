@@ -52,6 +52,9 @@ class ROS2JsonData:
         self.camera_frame = 'camera_color_optical_frame'
         self.fixed_frame = 'world'
         # self.wall_names = ['floor','left','right','front','back','ceiling']
+        # 0 = left; 1 = right; 2 = ceiling; 3 = floor; 4 = front; 5 = back
+        self.wall_names = {'left':0, 'right':1,'ceiling':2,'floor':3,'front':4,'back':5}
+
 
         self.list_of_ids = [str(uuid.uuid4()) for k in range(1000)]
         
@@ -62,6 +65,8 @@ class ROS2JsonData:
         self.human_ws = Marker()
         self.obstacles = dict()
         self.walls = dict()
+        self.clust_id = 0
+        self.prev_obj_clust_id = 0
 
     def wall_info_callback(self, data):
         self.walls_info = data
@@ -96,15 +101,26 @@ class ROS2JsonData:
             rospy.logwarn("Transform lookup failed!")
    
     def find_absolute_closest_coordinates(self, act_x, act_y, act_z):
-        (closest_obstacle, closest_wall) = find_closest_coordinates(act_x, act_y, act_z)
-        closest_object_list = [closest_obstacle, closest_wall]
-        min_distance = float('inf')
-        for i in closest_object_list:
-            distance = math.sqrt((i[0] - act_x)**2 + (i[1] - act_y)**2 + (i[2] - act_z)**2)
-            if distance < min_distance:
-                min_distance = distance
-                closest_object = i
-        return closest_object
+        (closest_obstacle, closest_wall) = self.find_closest_coordinates(act_x, act_y, act_z)
+        if closest_obstacle is not None:
+            closest_object_list = [closest_obstacle, closest_wall]
+            # print(closest_object_list)
+            min_distance = float('inf')
+            for close_object in closest_object_list:
+                # print(close_object)
+                # print(close_object[1][0])
+                # print(close_object[1][1])
+                # print(close_object[1][2])
+                distance = math.sqrt((close_object[1][0] - act_x)**2 + (close_object[1][1] - act_y)**2 + (close_object[1][2] - act_z)**2)
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_object = close_object
+                    type_obj = str(close_object[0])
+        else:
+            type_obj = ''
+            closest_object = closest_wall
+        
+        return type_obj, closest_object
         
     def find_closest_coordinates(self, act_x, act_y, act_z):
         closest_obstacle = None
@@ -169,17 +185,30 @@ class ROS2JsonData:
         # print(self.walls)
 
         if len(self.act_cam_position) > 0:
-            (c_obs,c_w)= self.find_closest_coordinates(self.act_cam_position[0],self.act_cam_position[1],self.act_cam_position[2])
-            print(c_obs)
-            print(c_w)
-            print('***********************')
-        # for near_p in nearest_obst_pts:
-            # json_data.append([self.list_of_ids[clust_id], strTmapcam, center_str, nearest_str, clust_type])
+            type_obj, closests_3d = self.find_absolute_closest_coordinates(self.act_cam_position[0],self.act_cam_position[1],self.act_cam_position[2])
+            if closests_3d is not None:
+                if (self.wall_names.get(type_obj)):
+                    self.clust_id = self.wall_names[type_obj]
+                else:
+                    self.prev_obj_clust_id = int(type_obj) + 6
+                    self.clust_id = self.prev_obj_clust_id
 
-        if len(json_data) > 0:
-            df_json = pd.DataFrame(json_data, columns=["unique_id", "T_map_cam", "center_3d", "nearest_3d", "type"])
-            self.json_human_workspace_pub.publish(str(df_json.to_json(orient='index')))
-              
+                center_pos_array = np.array(self.act_cam_position)
+                center_ori_array = np.array(self.act_cam_orientation)
+                closest_array = np.array(closests_3d[1])
+                # print(closests_3d[1])
+                center_pos_str = np.array2string(np.array(center_pos_array), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+                center_ori_str = np.array2string(np.array(center_ori_array), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+                nearest_str = np.array2string(np.array(closest_array), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+                strTmapcam = center_pos_str + ' ' + center_ori_str
+
+                # for near_p in nearest_obst_pts:
+                json_data.append([self.list_of_ids[self.clust_id], strTmapcam, center_pos_str, nearest_str, type_obj])
+
+            if len(json_data) > 0:
+                df_json = pd.DataFrame(json_data, columns=["unique_id", "T_map_cam", "center_3d", "nearest_3d", "type"])
+                self.json_human_workspace_pub.publish(str(df_json.to_json(orient='index')))
+                
 
 if __name__ == '__main__':
     
