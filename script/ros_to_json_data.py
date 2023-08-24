@@ -171,7 +171,7 @@ class ROS2JsonData:
                         w.num_points, w.pose.position.x, w.pose.position.y, w.pose.position.z, w.color_id]
                 json_data.append(newlist)
 
-        if len(json_data) > 0:        
+        if len(json_data) > 0:      
             df_json = pd.DataFrame(json_data, columns=["wall_type", "a", "b", "c", "d", "shortest_distance", "num_points", "plane_center_x", "plane_center_y", "plane_center_z", "color_id"])
             self.json_walls_equations_pub.publish(str(df_json.to_json(orient='index')))
 

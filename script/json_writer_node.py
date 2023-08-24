@@ -12,7 +12,7 @@ import rospy
 from std_msgs.msg import String, Bool
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-from darknet_ros_msgs.msg import BoundingBoxes, ObjectCount
+# from darknet_ros_msgs.msg import BoundingBoxes, ObjectCount
 from rosgraph_msgs.msg import Clock
 
 bridge = CvBridge()
@@ -44,7 +44,7 @@ class JsonWriter:
         rospy.Subscriber("out/json_human_workspace", String, self.save_human_workspace_json_callback)
 
         rospy.Subscriber('/darknet_ros/detection_image', Image, self.detection_img_callback)
-        rospy.Subscriber('/darknet_ros/found_object', ObjectCount, self.found_object_callback)
+        # rospy.Subscriber('/darknet_ros/found_object', ObjectCount, self.found_object_callback)
 
         rospy.Subscriber('/camera/rgb/image_rect_color', Image, self.rgb_img_callback)
 
@@ -52,43 +52,43 @@ class JsonWriter:
         rospy.Subscriber('/out/map2d_img1', Image, self.map2d_img_callback) # without objects, faster
 
         # Remove all previous jsons...
-        for dir_to_remove in ["/jsons/detected_walls_jsons", "/jsons/detected_objects_jsons", "/jsons/human_workspace_jsons", "/jsons"]:
+        for dir_to_remove in ["jsons/detected_walls_jsons", "jsons/detected_objects_jsons", "jsons/human_workspace_jsons", "jsons"]:
             if os.path.exists(os.path.join(os.path.dirname(__file__)) + dir_to_remove):
                     shutil.rmtree(os.path.join(os.path.dirname(__file__)) + dir_to_remove)
 
-        for dir_to_create in ["/jsons", "/jsons/detected_walls_jsons", "/jsons/detected_objects_jsons", "/jsons/human_workspace_jsons"]:
+        for dir_to_create in ["jsons", "jsons/detected_walls_jsons", "jsons/detected_objects_jsons", "jsons/human_workspace_jsons"]:
             os.mkdir(os.path.join(os.path.dirname(__file__)) + dir_to_create)
        
         # Remove all previous images...   
-        for dir_to_remove in ["/images/map2d", "/images/rgb", "/images/detection","/images"]:
+        for dir_to_remove in ["images/map2d", "images/rgb", "images/detection","images"]:
             if os.path.exists(os.path.join(os.path.dirname(__file__)) + dir_to_remove):
                 shutil.rmtree(os.path.join(os.path.dirname(__file__)) + dir_to_remove)
                 
-        for dir_to_create in ["/images", "/images/rgb", "/images/detection", "/images/map2d"]:
+        for dir_to_create in ["images", "images/rgb", "images/detection", "images/map2d"]:
             os.mkdir(os.path.join(os.path.dirname(__file__)) + dir_to_create)
 
 
-        self.use_bag = None
-        while self.use_bag == None:
-            rospy.Subscriber('/use_bag', Bool, self.bag_bool_callback)
-            print("Waiting for the /use_bag topic!")
-            
-        if self.use_bag:
-            rospy.Subscriber('/clock', Clock, self.clock_callback)
-        else:
-            now = rospy.Time.now()
-            self.act_time = str(now.to_sec()) # ROS (clock) actual time as a string
+        # self.use_bag = None
+        # while self.use_bag == None:
+            # rospy.Subscriber('/use_bag', Bool, self.bag_bool_callback)
+            # print("Waiting for the /use_bag topic!")
+            # 
+        # if self.use_bag:
+            # rospy.Subscriber('/clock', Clock, self.clock_callback)
+        # else:
+        now = rospy.Time.now()
+        self.act_time = str(now.to_sec()) # ROS (clock) actual time as a string
         
-            timer_period = 0.01 # [seconds]
-            self.timer = rospy.Timer(rospy.Duration(timer_period), self.control_loop) 
+        timer_period = 0.01 # [seconds]
+        self.timer = rospy.Timer(rospy.Duration(timer_period), self.control_loop) 
 
 
-    def bag_bool_callback(self, msg):
-        self.use_bag = msg.data
+    # def bag_bool_callback(self, msg):
+    #     self.use_bag = msg.data
 
     # clock callback
-    def clock_callback(self, msg):        
-        self.act_time = str(msg.clock.secs) + "." + str(msg.clock.nsecs)
+    # def clock_callback(self, msg):        
+    #     self.act_time = str(msg.clock.secs) + "." + str(msg.clock.nsecs)
        
     # if not using rosbag
     def control_loop(self, time):  
@@ -103,7 +103,7 @@ class JsonWriter:
                 json_df = pd.read_csv(StringIO(msg.data), sep='\s+')
                 json_df.insert(0, "ros_timestamp", self.act_time, True)
 
-                json_path = os.path.join(os.path.dirname(__file__)) + "/jsons/detected_walls_jsons/"
+                json_path = os.path.join(os.path.dirname(__file__)) + "jsons/detected_walls_jsons/"
 
                 # Writing results to detected_objects.json
                 with open(json_path + str(self.walls_counter) +"_" + self.act_time + ".json", "w") as outfile:
@@ -122,7 +122,7 @@ class JsonWriter:
                 json_df = pd.read_json(StringIO(msg.data), orient='index')                
                 json_df.insert(0, "ros_timestamp", self.act_time, True)
               
-                json_path = os.path.join(os.path.dirname(__file__)) + "/jsons/detected_objects_jsons/"
+                json_path = os.path.join(os.path.dirname(__file__)) + "jsons/detected_objects_jsons/"
                                 
                 # Writing results to detected_objects.json
                 with open(json_path + str(self.objects_counter)+"_"  + self.act_time + ".json", "w") as outfile:
@@ -141,7 +141,7 @@ class JsonWriter:
                 json_df = pd.read_json(StringIO(msg.data), orient='index')                
                 json_df.insert(1, "ros_timestamp", self.act_time, True)
               
-                json_path = os.path.join(os.path.dirname(__file__)) + "/jsons/human_workspace_jsons/"
+                json_path = os.path.join(os.path.dirname(__file__)) + "jsons/human_workspace_jsons/"
                         
                 # Writing results to detected_objects.json
                 with open(json_path + str(self.human_counter) +"_" + self.act_time + ".json", "w") as outfile:
@@ -153,11 +153,11 @@ class JsonWriter:
                 
 
     
-    def found_object_callback(self, msg):
-        if msg.count > 0:
-            self.found_object = True
-        else:
-            self.found_object = False
+    # def found_object_callback(self, msg):
+    #     if msg.count > 0:
+    #         self.found_object = True
+    #     else:
+    #         self.found_object = False
 
 
     def detection_img_callback(self, img):                
