@@ -120,17 +120,17 @@ void CombineDepthRgb::grabRGBD(const sensor_msgs::ImageConstPtr& msg_rgb, const 
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "semantic_registration");
+    ros::init(argc, argv, "rgb_d_combiner");
     ros::NodeHandle nodeHandler;
 
     CombineDepthRgb s_rec(nodeHandler);
 
     std::string image_topic, depth_topic, info_topic;
     int         sync_time;
-    nodeHandler.param("/semantic_registration/image_topic", image_topic, std::string("/camera/color/image_raw"));
-    nodeHandler.param("/semantic_registration/depth_topic", depth_topic, std::string("/camera/aligned_depth_to_color/image_raw"));
-    nodeHandler.param("/semantic_registration/sync_time", sync_time, 10);
-    nodeHandler.param("/semantic_registration/info_topic", info_topic, std::string("/camera/color/camera_info"));
+    nodeHandler.param("/rgb_d_combiner/image_topic", image_topic, std::string("/camera/color/image_raw"));
+    nodeHandler.param("/rgb_d_combiner/depth_topic", depth_topic, std::string("/camera/aligned_depth_to_color/image_raw"));
+    nodeHandler.param("/rgb_d_combiner/sync_time", sync_time, 10);
+    nodeHandler.param("/rgb_d_combiner/info_topic", info_topic, std::string("/camera/color/camera_info"));
 
     ros::Subscriber camera_info_sub =
         nodeHandler.subscribe(info_topic, 1, &CombineDepthRgb::cameraInfoCallback, &s_rec);

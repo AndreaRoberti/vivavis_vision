@@ -161,6 +161,32 @@ Please ensure that the necessary ROS topics and messages are correctly configure
 </details>
 
 
+<details>
+<summary><strong>RGB-D combiner Node Documentation [C++]</strong></summary>
+This node combines the RGB image and the aligned depth image to create the PointCloud
+
+## Publishers
+
+- `output_point_cloud`  (`sensor_msgs::PointCloud2`)
+
+This publisher is responsible for publishing the combined point cloud.
+
+## Subscribers
+
+- `/rgb_d_combiner/image_topic` 
+    
+    This subscriber listens to image color camera topic.
+
+- `/rgb_d_combiner/depth_topic` 
+
+    This subscriber listens to aligned depth to color camera topic.
+
+- `/rgb_d_combiner/info_topic` 
+
+    This subscriber listens to image color camera info topic.
+
+
+</details>
 
 <details>
 <summary><strong>Vision Data Processing Node Documentation [Python] </strong></summary>
@@ -217,3 +243,4 @@ The Vision Data Processing Node subscribes to various vision-related topics to r
 
 
 </details>
+
