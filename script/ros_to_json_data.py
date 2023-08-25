@@ -36,10 +36,7 @@ class ROS2JsonData:
         super().__init__()
 
         rospy.init_node('ros_to_json_data')   
-        
-        self.act_cam_position = []     # store the ACTUAL camera position vector[x,y,z]
-        self.walls_ordered_eq_params = [[],[],[],[],[],[]]   # ORDERED equations' parameters of "walls" found inside the scene
-                       
+                               
         self.json_walls_equations_pub = rospy.Publisher('out/json_walls_equations', String, queue_size=100)
         self.json_human_workspace_pub = rospy.Publisher('out/json_human_workspace', String, queue_size=100)
 
@@ -51,10 +48,9 @@ class ROS2JsonData:
         self.listener = tf.TransformListener()
         self.camera_frame = 'camera_color_optical_frame'
         self.fixed_frame = 'world'
-        # self.wall_names = ['floor','left','right','front','back','ceiling']
+        # wall info msgs ['floor','left','right','front','back','ceiling']
         # 0 = left; 1 = right; 2 = ceiling; 3 = floor; 4 = front; 5 = back
         self.wall_names = {'left':0, 'right':1,'ceiling':2,'floor':3,'front':4,'back':5}
-
 
         self.list_of_ids = [str(uuid.uuid4()) for k in range(1000)]
         
@@ -98,7 +94,7 @@ class ROS2JsonData:
             # rospy.loginfo("Translation: %s" % str(trans))
             # rospy.loginfo("Rotation: %s" % str(rot))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            rospy.logwarn("Transform lookup failed!")
+            rospy.logwarn("Transform lookup: no transform from camera_frame to fixed_frame available!")
    
     def find_absolute_closest_coordinates(self, act_x, act_y, act_z):
         (closest_obstacle, closest_wall) = self.find_closest_coordinates(act_x, act_y, act_z)
@@ -107,10 +103,6 @@ class ROS2JsonData:
             # print(closest_object_list)
             min_distance = float('inf')
             for close_object in closest_object_list:
-                # print(close_object)
-                # print(close_object[1][0])
-                # print(close_object[1][1])
-                # print(close_object[1][2])
                 distance = math.sqrt((close_object[1][0] - act_x)**2 + (close_object[1][1] - act_y)**2 + (close_object[1][2] - act_z)**2)
                 if distance < min_distance:
                     min_distance = distance
@@ -146,12 +138,32 @@ class ROS2JsonData:
     def shortest_point_plane_distance(self, x1, y1, z1, a, b, c, d):        
         d = abs((a * x1 + b * y1 + c * z1 + d))
         e = (math.sqrt(a * a + b * b + c * c))
-        # print (e)
         dist = d/e
         # print("Perpendicular distance is", dist)
         return dist
 
-    # 0 = left; 1 = right; 2 = ceiling; 3 = floor; 4 = front; 5 = back
+    # Define a function to check if a point is inside the workspace described by the Marker
+    def is_point_inside_workspace(self, point, marker):
+        # Extract marker information
+        marker_pose = marker.pose.position
+        marker_scale = marker.scale
+
+        # Calculate boundaries
+        min_x = marker_pose.x - marker_scale.x / 2.0
+        max_x = marker_pose.x + marker_scale.x / 2.0
+        min_y = marker_pose.y - marker_scale.y / 2.0
+        max_y = marker_pose.y + marker_scale.y / 2.0
+        min_z = marker_pose.z - marker_scale.z / 2.0
+        max_z = marker_pose.z + marker_scale.z / 2.0
+
+        # Check if the point is inside the boundaries
+        if (min_x <= point.x <= max_x and
+            min_y <= point.y <= max_y and
+            min_z <= point.z <= max_z):
+            return True
+        else:
+            return False
+
     # Create pandas dataframe
     def publish_json_df(self):
         json_data = []

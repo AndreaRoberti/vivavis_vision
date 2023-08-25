@@ -17,9 +17,8 @@ catkin build
 source devel/setup.bash
 ```
 
-## Example
+# vivavis_vision_node
 
-    ![](./doc/example_scene.gif)
 ## Parameters
 
 ### Visualization Frames
@@ -74,9 +73,9 @@ source devel/setup.bash
 
 - `human_ws_pub` (topic: `human_ws`): Publishes a `visualization_msgs::Marker` message for visualizing human workspace.
 
-### Debug Publisher
+### Obstacles Poses Publisher
 
-- `pose_pub` (topic: `debug_pose`): Publishes a `geometry_msgs::PoseArray` message for debugging poses.
+- `pose_pub` (topic: `obstacles_pose`): Publishes a `geometry_msgs::PoseArray` message for obstacles poses.
 
 
 ## WallInfo Message
@@ -91,3 +90,53 @@ The `WallInfoArray` is an array of 6 elements [floor, left, right, front, back, 
 - `float64 num_points`
 - `int64 color_id`
 - `geometry_msgs/Pose pose`
+
+
+# vivavis_pcloud_stich
+
+
+The Point Cloud Stitcher Node is responsible for stitching point clouds together based on various parameters and publishing the stitched point cloud in a designated reference frame.
+
+## Parameters
+
+### `voxel_size_stitching` (float, default: 0.002)
+
+This parameter specifies the voxel size to be used during the stitching process. The point clouds will be downsampled using voxel grid filtering with this voxel size before stitching.
+
+### `voxel_size_input_cloud` (float, default: 0.002)
+
+This parameter defines the voxel size to be applied to the input point clouds before stitching. Similar to `voxel_size_stitching`, the input clouds are downsampled using voxel grid filtering.
+
+### `max_cam_depth` (float, default: 0.3)
+
+The maximum depth of the camera. Points in the input point clouds with depth values beyond this threshold will be ignored during the stitching process.
+
+### `output_reference_frame` (string, default: "")
+
+The reference frame in which the stitched point cloud will be published. This parameter specifies the target reference frame for the output point cloud.
+
+## Subscribers
+
+### `in_pointcloud` (`sensor_msgs::PointCloud2`)
+
+This subscriber listens for incoming point cloud messages of type `sensor_msgs::PointCloud2`. The received point clouds will be used for stitching.
+
+## Publishers
+
+### `stitched_pointcloud` (`sensor_msgs::PointCloud2`)
+
+This publisher is responsible for publishing the stitched point cloud after the stitching process is complete. The output point cloud will be in the reference frame specified by the `output_reference_frame` parameter.
+
+## Methods
+
+### `pointCloudCb`
+
+This method is the callback function for the `in_pointcloud` subscriber. It processes the incoming point clouds, performs stitching using the provided parameters, and publishes the stitched point cloud to the `stitched_pointcloud` topic.
+
+## Description
+
+The Point Cloud Stitcher Node subscribes to incoming point cloud messages (`in_pointcloud` topic) and performs stitching based on the specified parameters (`voxel_size_stitching`, `voxel_size_input_cloud`, `max_cam_depth`). The stitched point cloud is then published in the specified reference frame (`output_reference_frame`) using the `stitched_pointcloud` topic.
+
+Please ensure that the necessary ROS topics and messages are correctly configured to enable the smooth operation of the Point Cloud Stitcher Node.
+
+**Note:** It is important to provide accurate parameter values and ensure that the reference frames are set appropriately to achieve desired results.

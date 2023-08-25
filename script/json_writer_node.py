@@ -100,7 +100,8 @@ class JsonWriter:
         if msg.data != []:          
             if self.prev_walls_json_timestamp < float(self.act_time):
                 # To insert the timestamp:
-                json_df = pd.read_csv(StringIO(msg.data), sep='\s+')
+                # json_df = pd.read_csv(StringIO(msg.data), sep='\s+')
+                json_df = pd.read_json(StringIO(msg.data), orient='index')  
                 json_df.insert(0, "ros_timestamp", self.act_time, True)
 
                 json_path = os.path.join(os.path.dirname(__file__)) + "jsons/detected_walls_jsons/"
