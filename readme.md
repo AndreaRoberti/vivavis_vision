@@ -1,12 +1,12 @@
-# VivavisVision Documentation
+# VisavisVision Documentation
  
  This is a ROS package developed for helping blind people to navigate in unknown indoor environments.
  
  It depends on a PointCloud data, obtained through a VSLAM algorithm or directly through a RGB-D camera.
  
- - VSLAM : use the main node *vivavis_vision_node*
+ - VSLAM : use the main node *visavis_vision_node*
 
- - Visual Odometry and Stitching : use *vivavis_vision_node* and *vivavis_pcloud_stich* nodes.
+ - Visual Odometry and Stitching : use *visavis_vision_node* and *visavis_pcloud_stich* nodes.
 
  *example launch files in the launch folder*
 
@@ -15,7 +15,7 @@
 - Clone this repo in your *catkin_ws*
 
 ```bash
-git clone https://github.com/AndreaRoberti/vivavis_vision.git`
+git clone https://github.com/AndreaRoberti/visavis_vision.git`
 ```
 
 - build and source
@@ -28,7 +28,7 @@ source devel/setup.bash
 ## Nodes Description
 
 <details>
-<summary><strong>Vivavis Vision Node Documentation [C++]</strong></summary>
+<summary><strong>Visavis Vision Node Documentation [C++]</strong></summary>
 
 This is the main node that elaborates the incoming point cloud and seperates the walls from the objects/obstacles.
 
@@ -74,9 +74,9 @@ This is the main node that elaborates the incoming point cloud and seperates the
 
 ### Object Publishers
 
-- `ellipsoid_pub` (topic: `ellipsoid`): Publishes an `vivavis_vision::EllipsoidArray` message representing ellipsoids.
+- `ellipsoid_pub` (topic: `ellipsoid`): Publishes an `visavis_vision::EllipsoidArray` message representing ellipsoids.
 
-- `walls_info_pub` (topic: `walls_info`): Publishes a `vivavis_vision::WallInfoArray` message containing information about walls.
+- `walls_info_pub` (topic: `walls_info`): Publishes a `visavis_vision::WallInfoArray` message containing information about walls.
 
 ### Visualization Publishers
 
@@ -205,21 +205,21 @@ This publisher is responsible for sending JSON-formatted human workspace informa
 
 ## Subscribers
 
-- `vivavis_vision/walls_info` (`rospy.Subscriber`)
+- `visavis_vision/walls_info` (`rospy.Subscriber`)
 
-This subscriber listens to the topic `vivavis_vision/walls_info` for incoming messages of type `WallInfoArray`. The provided callback function `wall_info_callback` processes the received wall information.
+This subscriber listens to the topic `visavis_vision/walls_info` for incoming messages of type `WallInfoArray`. The provided callback function `wall_info_callback` processes the received wall information.
 
 - Expected Message Type: `WallInfoArray`
 
-- `vivavis_vision/obstacles_pose` (`rospy.Subscriber`)
+- `visavis_vision/obstacles_pose` (`rospy.Subscriber`)
 
-This subscriber listens to the topic `vivavis_vision/obstacles_pose` for incoming messages of type `PoseArray`. The provided callback function `obstacles_pose_array_callback` processes the received pose array, which contains information about the poses of obstacles in the environment.
+This subscriber listens to the topic `visavis_vision/obstacles_pose` for incoming messages of type `PoseArray`. The provided callback function `obstacles_pose_array_callback` processes the received pose array, which contains information about the poses of obstacles in the environment.
 
 - Expected Message Type: `PoseArray`
 
-- `vivavis_vision/human_ws` (`rospy.Subscriber`)
+- `visavis_vision/human_ws` (`rospy.Subscriber`)
 
-This subscriber listens to the topic `vivavis_vision/human_ws` for incoming messages of type `Marker`. The provided callback function `human_ws_callback` processes the received marker data, which represents the workspace of a human detected in the environment.
+This subscriber listens to the topic `visavis_vision/human_ws` for incoming messages of type `Marker`. The provided callback function `human_ws_callback` processes the received marker data, which represents the workspace of a human detected in the environment.
 
 - Expected Message Type: `Marker`
 
@@ -227,15 +227,15 @@ This subscriber listens to the topic `vivavis_vision/human_ws` for incoming mess
 
 - `wall_info_callback(data)`
 
-This callback function processes the data received from the `vivavis_vision/walls_info` topic. It handles the detected wall information contained in the `WallInfoArray` message.
+This callback function processes the data received from the `visavis_vision/walls_info` topic. It handles the detected wall information contained in the `WallInfoArray` message.
 
 - `obstacles_pose_array_callback(data)`
 
-This callback function processes the data received from the `vivavis_vision/obstacles_pose` topic. It handles the detected obstacle poses contained in the `PoseArray` message.
+This callback function processes the data received from the `visavis_vision/obstacles_pose` topic. It handles the detected obstacle poses contained in the `PoseArray` message.
 
 - `human_ws_callback(data)`
 
-This callback function processes the data received from the `vivavis_vision/human_ws` topic. It handles the marker data representing the human workspace contained in the `Marker` message.
+This callback function processes the data received from the `visavis_vision/human_ws` topic. It handles the marker data representing the human workspace contained in the `Marker` message.
 
 ## Description
 

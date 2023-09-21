@@ -27,7 +27,7 @@ from scipy.spatial import ConvexHull
 
 from visualization_msgs.msg import Marker
 
-from vivavis_vision.msg import WallInfo, WallInfoArray
+from visavis_vision.msg import WallInfo, WallInfoArray
 
 bridge = CvBridge()
 
@@ -40,9 +40,9 @@ class ROS2JsonData:
         self.json_walls_equations_pub = rospy.Publisher('out/json_walls_equations', String, queue_size=100)
         self.json_human_workspace_pub = rospy.Publisher('out/json_human_workspace', String, queue_size=100)
 
-        rospy.Subscriber('vivavis_vision/walls_info', WallInfoArray, self.wall_info_callback)
-        rospy.Subscriber('vivavis_vision/obstacles_pose', PoseArray, self.obstacles_pose_array_callback)
-        rospy.Subscriber('vivavis_vision/human_ws', Marker, self.human_ws_callback)
+        rospy.Subscriber('visavis_vision/walls_info', WallInfoArray, self.wall_info_callback)
+        rospy.Subscriber('visavis_vision/obstacles_pose', PoseArray, self.obstacles_pose_array_callback)
+        rospy.Subscriber('visavis_vision/human_ws', Marker, self.human_ws_callback)
 
         
         self.listener = tf.TransformListener()

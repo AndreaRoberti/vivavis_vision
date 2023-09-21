@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(vivavis_vision)
+project(visavis_vision)
 
 
 set(CMAKE_CXX_STANDARD 14)
@@ -63,14 +63,14 @@ catkin_package(
 
 include_directories(include ${Boost_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
-add_executable(vivavis_vision_node src/vivavis_vision.cpp)
-target_link_libraries( vivavis_vision_node ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES})
+add_executable(visavis_vision_node src/visavis_vision.cpp)
+target_link_libraries( visavis_vision_node ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(combiner src/rgb_d_combiner.cpp)
 target_link_libraries(combiner  ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 
-add_executable(vivavis_pcloud_stich src/pcloud_stitch.cc)
-# target_compile_options(vivavis_pcloud_stich PRIVATE ${OpenMP_FLAGS})
-# target_link_libraries(vivavis_pcloud_stich ${catkin_LIBRARIES} ${OpenMP_LIBS})
-target_link_libraries(vivavis_pcloud_stich ${catkin_LIBRARIES})
+add_executable(visavis_pcloud_stich src/pcloud_stitch.cc)
+# target_compile_options(visavis_pcloud_stich PRIVATE ${OpenMP_FLAGS})
+# target_link_libraries(visavis_pcloud_stich ${catkin_LIBRARIES} ${OpenMP_LIBS})
+target_link_libraries(visavis_pcloud_stich ${catkin_LIBRARIES})

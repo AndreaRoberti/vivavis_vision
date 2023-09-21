@@ -1,2 +1,2 @@
 Header header
-vivavis_vision/Ellipsoid[] ellipsoid
+visavis_vision/Ellipsoid[] ellipsoid

@@ -1,1 +1,1 @@
-vivavis_vision/WallInfo[] walls
+visavis_vision/WallInfo[] walls

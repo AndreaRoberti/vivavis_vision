@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>vivavis_vision</name>
+  <name>visavis_vision</name>
   <version>0.0.0</version>
-  <description>The vivavis_vision package</description>
+  <description>The visavis_vision package</description>
 
   <maintainer email="andrea.roberti@univr.it">andrea roberti</maintainer>
 

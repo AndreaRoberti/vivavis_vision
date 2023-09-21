@@ -1,6 +1,6 @@
-#include <vivavis_vision.h>
+#include <visavis_vision.h>
 
-VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
+VisavisVision::VisavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
                                                     it_(nh),
                                                     xyz_cld_ptr(new pcl::PointCloud<pcl::PointXYZRGB>),
                                                     prev_xyz_cld_ptr(new pcl::PointCloud<pcl::PointXYZRGB>),
@@ -21,15 +21,15 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     private_nh_.param<int>("min_object_cluster_size", min_object_cluster_size_, 1);
 
     // Input
-    cloud_sub = nh_.subscribe("in_cloud", 1, &VivavisVision::cloudCallback, this);
+    cloud_sub = nh_.subscribe("in_cloud", 1, &VisavisVision::cloudCallback, this);
     // Output
     cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("walls_cloud", 1);
     cloud_obs_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("obstacles_cloud", 1);
     ellipsoid_cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("ellipsoid_cloud", 1);
 
-    // cloud_array_pub = private_nh_.advertise<vivavis_vision::CloudArray>("out_cloud_array", 1);
-    ellipsoid_pub = private_nh_.advertise<vivavis_vision::EllipsoidArray>("ellipsoid", 1);
-    walls_info_pub = private_nh_.advertise<vivavis_vision::WallInfoArray>("walls_info", 1);
+    // cloud_array_pub = private_nh_.advertise<visavis_vision::CloudArray>("out_cloud_array", 1);
+    ellipsoid_pub = private_nh_.advertise<visavis_vision::EllipsoidArray>("ellipsoid", 1);
+    walls_info_pub = private_nh_.advertise<visavis_vision::WallInfoArray>("walls_info", 1);
 
     visual_walls_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_walls", 1, true);
     visual_obstacles_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_obstacles", 1, true);
@@ -41,7 +41,7 @@ VivavisVision::VivavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     walls_info.walls.resize(6);
 }
 
-cv::Mat VivavisVision::getCameraPose()
+cv::Mat VisavisVision::getCameraPose()
 {
     tf::StampedTransform cameraPose_transform;
     try
@@ -66,7 +66,7 @@ cv::Mat VivavisVision::getCameraPose()
     return optFramePose;
 }
 
-void VivavisVision::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &input)
+void VisavisVision::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &input)
 {
     pcl::PCLPointCloud2 pcl_pc2;
     pcl_conversions::toPCL(*input, pcl_pc2);
@@ -110,7 +110,7 @@ void VivavisVision::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &input)
 
 template <typename PointT>
 boost::shared_ptr<pcl::PointCloud<PointT>>
-VivavisVision::voxel_grid_subsample(const boost::shared_ptr<pcl::PointCloud<PointT>> &cld_in, float cell_size)
+VisavisVision::voxel_grid_subsample(const boost::shared_ptr<pcl::PointCloud<PointT>> &cld_in, float cell_size)
 {
     pcl::VoxelGrid<PointT> sor;
     sor.setInputCloud(cld_in);
@@ -120,7 +120,7 @@ VivavisVision::voxel_grid_subsample(const boost::shared_ptr<pcl::PointCloud<Poin
     return final_cld;
 }
 
-void VivavisVision::makeEllipsoid(pcl::PointCloud<pcl::PointXYZRGB> &cloud, const Eigen::Vector3f radii, const Eigen::Vector4f &c)
+void VisavisVision::makeEllipsoid(pcl::PointCloud<pcl::PointXYZRGB> &cloud, const Eigen::Vector3f radii, const Eigen::Vector4f &c)
 {
     pcl::PointXYZRGB p;
     p.r = 180;
@@ -142,7 +142,7 @@ void VivavisVision::makeEllipsoid(pcl::PointCloud<pcl::PointXYZRGB> &cloud, cons
     }
 }
 
-std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> VivavisVision::clusterObject(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster, int &num_obj)
+std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> VisavisVision::clusterObject(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster, int &num_obj)
 {
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> obj_surf;
     std::vector<pcl::PointIndices> clusters;
@@ -176,7 +176,7 @@ std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> VivavisVision::clusterObject
     return obj_surf;
 }
 
-void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
+void VisavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 {
     // Create the segmentation object for the planar model and set all the parameters
     pcl::SACSegmentation<pcl::PointXYZRGB> seg;
@@ -256,7 +256,7 @@ void VivavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     walls_info_pub.publish(walls_info);
 }
 
-void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, float c, float d,
+void VisavisVision::setPlaneTransform(int id, int num_points, float a, float b, float c, float d,
                                       Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p)
 {
     Eigen::Vector3f plane_normal(a, b, c);
@@ -285,7 +285,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     // Extract the z-rotation (in radians) from the Euler angles
     float z_rotation = euler_angles[2];
 
-    vivavis_vision::WallInfo wall;
+    visavis_vision::WallInfo wall;
     wall.a = a;
     wall.b = b;
     wall.c = c;
@@ -354,7 +354,7 @@ void VivavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     br->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame, wall.header.frame_id));
 }
 
-visualization_msgs::Marker VivavisVision::addVisualObject(int id, Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p,
+visualization_msgs::Marker VisavisVision::addVisualObject(int id, Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p,
                                                           Eigen::Vector4f color,
                                                           Eigen::Quaternionf orientation)
 {
@@ -383,7 +383,7 @@ visualization_msgs::Marker VivavisVision::addVisualObject(int id, Eigen::Vector4
     return plane_marker;
 }
 
-void VivavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
+void VisavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
 {
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> objects = clusterObject(cloud, num_obj);
     // ROS_INFO_STREAM(ros::this_node::getName() << " HAS " << num_obj << "  objects");
@@ -431,7 +431,7 @@ void VivavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
     }
 }
 
-void VivavisVision::update()
+void VisavisVision::update()
 {
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr map_cld_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
@@ -450,11 +450,11 @@ void VivavisVision::update()
 //------------------------------------------------------------------------------------------------
 //                                         MAIN
 //------------------------------------------------------------------------------------------------
-int vivavis_vision_main(int argc, char **argv)
+int visavis_vision_main(int argc, char **argv)
 {
-    ros::init(argc, argv, "vivavis_vision_node");
+    ros::init(argc, argv, "visavis_vision_node");
     ros::NodeHandle nh;
-    VivavisVision vv_vision(nh);
+    VisavisVision vv_vision(nh);
 
     while (ros::ok())
     {
@@ -466,5 +466,5 @@ int vivavis_vision_main(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    return vivavis_vision_main(argc, argv);
+    return visavis_vision_main(argc, argv);
 }

@@ -43,22 +43,22 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-// #include <vivavis_vision/PointArray.h>
-// #include <vivavis_vision/CloudArray.h>
-#include <vivavis_vision/Ellipsoid.h>
-#include <vivavis_vision/EllipsoidArray.h>
-#include <vivavis_vision/WallInfo.h>
-#include <vivavis_vision/WallInfoArray.h>
+// #include <visavis_vision/PointArray.h>
+// #include <visavis_vision/CloudArray.h>
+#include <visavis_vision/Ellipsoid.h>
+#include <visavis_vision/EllipsoidArray.h>
+#include <visavis_vision/WallInfo.h>
+#include <visavis_vision/WallInfoArray.h>
 #include <math.h>
 
 #define degreesToRadians(angleDegrees) (angleDegrees * M_PI / 180.0) // Converts degrees to radians
 #define radiansToDegrees(angleRadians) (angleRadians * 180.0 / M_PI) // Converts radians to degrees
 
-class VivavisVision
+class VisavisVision
 {
 public:
-    VivavisVision(ros::NodeHandle &nh);
-    ~VivavisVision(){};
+    VisavisVision(ros::NodeHandle &nh);
+    ~VisavisVision(){};
 
     void cloudCallback(const sensor_msgs::PointCloud2ConstPtr &input);
     void update();
@@ -96,7 +96,7 @@ private:
     visualization_msgs::MarkerArray visualize_walls, visualize_obstacles;
     visualization_msgs::Marker human_ws;
 
-    vivavis_vision::WallInfoArray walls_info;
+    visavis_vision::WallInfoArray walls_info;
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr xyz_cld_ptr;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr prev_xyz_cld_ptr;

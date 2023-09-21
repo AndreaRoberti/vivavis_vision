@@ -1,8 +1,8 @@
 <launch>
-    <!-- <node name="vivavis_vision" pkg="vivavis_vision" type="vivavis_vision_node" respawn="false"
+    <!-- <node name="visavis_vision" pkg="visavis_vision" type="visavis_vision_node" respawn="false"
     launch-prefix="gdb -ex run - -args" 
         output="screen"> -->
-    <node name="vivavis_vision" pkg="vivavis_vision" type="vivavis_vision_node" respawn="false"
+    <node name="visavis_vision" pkg="visavis_vision" type="visavis_vision_node" respawn="false"
         output="screen">
         <param name="optical_frame" type="string" value="camera_color_optical_frame" />
         <param name="fixed_frame" type="string" value="world" />
@@ -22,16 +22,16 @@
         <!-- <remap from="walls_cloud" to="/planes"/> -->
 
 
-        <remap from="debug_pose" to="/vivavis/ellipsoid/debug_pose" />
+        <remap from="debug_pose" to="/visavis/ellipsoid/debug_pose" />
         <!-- private handler-->
-        <remap from="vivavis_vision/walls_cloud" to="/vivavis/filter_cloud" />
-        <remap from="vivavis_vision/out_cloud_array" to="/vivavis/cloud_array" />
-        <remap from="vivavis_vision/ellipsoid" to="/vivavis/ellipsoid_data" />
-        <remap from="vivavis_vision/ellipsoid_cloud" to="/vivavis/ellipsoid_cloud" />
+        <remap from="visavis_vision/walls_cloud" to="/visavis/filter_cloud" />
+        <remap from="visavis_vision/out_cloud_array" to="/visavis/cloud_array" />
+        <remap from="visavis_vision/ellipsoid" to="/visavis/ellipsoid_data" />
+        <remap from="visavis_vision/ellipsoid_cloud" to="/visavis/ellipsoid_cloud" />
 
     </node>
 
-    <node name="rviz_vivavis" pkg="rviz" type="rviz"
-        args="-d $(find vivavis_vision)/rviz/vivavis_vision.rviz" respawn="false" />
+    <node name="rviz_visavis" pkg="rviz" type="rviz"
+        args="-d $(find visavis_vision)/rviz/visavis_vision.rviz" respawn="false" />
 
 </launch>

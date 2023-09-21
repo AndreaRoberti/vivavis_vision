@@ -160,7 +160,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /vivavis_vision/walls_cloud
+      Topic: /visavis_vision/walls_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -188,7 +188,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /vivavis_vision/obstacles_cloud
+      Topic: /visavis_vision/obstacles_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -216,14 +216,14 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /vivavis/ellipsoid_cloud
+      Topic: /visavis/ellipsoid_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /vivavis_vision/visual_obstacles
+      Marker Topic: /visavis_vision/visual_obstacles
       Name: VISUAL_OBS
       Namespaces:
         1: true
@@ -277,7 +277,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /vivavis_vision/visual_walls
+      Marker Topic: /visavis_vision/visual_walls
       Name: VISUAL_WALLS
       Namespaces:
         {}
@@ -285,7 +285,7 @@ Visualization Manager:
       Value: false
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /vivavis_vision/human_ws
+      Marker Topic: /visavis_vision/human_ws
       Name: HUMAN_WS
       Namespaces:
         0: true
@@ -305,7 +305,7 @@ Visualization Manager:
       Shaft Length: 0.23000000417232513
       Shaft Radius: 0.009999999776482582
       Shape: Axes
-      Topic: /vivavis_vision/obstacles_pose
+      Topic: /visavis_vision/obstacles_pose
       Unreliable: false
       Value: true
   Enabled: true
