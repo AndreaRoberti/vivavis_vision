@@ -39,6 +39,7 @@ class ROS2JsonData:
                                
         self.json_walls_equations_pub = rospy.Publisher('out/json_walls_equations', String, queue_size=100)
         self.json_human_workspace_pub = rospy.Publisher('out/json_human_workspace', String, queue_size=100)
+        # self.json_objects_pub = rospy.Publisher('/out/json_objects', String, queue_size=100)
 
         rospy.Subscriber('visavis_vision/walls_info', WallInfoArray, self.wall_info_callback)
         rospy.Subscriber('visavis_vision/obstacles_pose', PoseArray, self.obstacles_pose_array_callback)
@@ -220,7 +221,25 @@ class ROS2JsonData:
             if len(json_data) > 0:
                 df_json = pd.DataFrame(json_data, columns=["unique_id", "T_map_cam", "center_3d", "nearest_3d", "type"])
                 self.json_human_workspace_pub.publish(str(df_json.to_json(orient='index')))
-                
+
+    # def publish_obs_json(self):
+    #     json_data = []
+    #     for obj in self.detected_objects:   
+    #         class_name, class_id, confidence, new_bbox_iou, obj_oriented_bbox, center, distance, inframe = obj
+    #         new_bbox_iou_str = np.array2string(np.array(new_bbox_iou), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+    #         obj_oriented_bbox_str = np.array2string(np.array(obj_oriented_bbox), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+    #         center_str = np.array2string(np.array(center), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+
+    #         json_data.append([class_name, class_id, confidence, new_bbox_iou_str, obj_oriented_bbox_str, center_str, distance, inframe])
+                    
+    #     if len(json_data) > 0:
+    #         df_json = pd.DataFrame(json_data, columns=["class_name", "class_id", "confidence", "corners_iou", "corners_oriented_bbox", "center_3d", "distance", "inframe"])
+    #         self.json_objects_pub.publish(str(df_json.to_json(orient='index')))
+
+    #         print("df", df_json)
+
+            
+
 
 if __name__ == '__main__':
     
