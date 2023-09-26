@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#!/usr/bin/env python3
 
 # Python libraries
 import os
@@ -46,7 +46,8 @@ class JsonWriter:
         rospy.Subscriber('/darknet_ros/detection_image', Image, self.detection_img_callback)
         # rospy.Subscriber('/darknet_ros/found_object', ObjectCount, self.found_object_callback)
 
-        rospy.Subscriber('/camera/rgb/image_rect_color', Image, self.rgb_img_callback)
+        # rospy.Subscriber('/camera/rgb/image_rect_color', Image, self.rgb_img_callback)
+        rospy.Subscriber('/camera/color/image_rect_color', Image, self.rgb_img_callback)
 
         #rospy.Subscriber('/out/map2d_img2', Image, self.map2d_img_callback) # with objects' bounding boxes (CNN results)
         rospy.Subscriber('/out/map2d_img1', Image, self.map2d_img_callback) # without objects, faster
@@ -166,7 +167,7 @@ class JsonWriter:
         # required because that topic has also images without detected objects
         if self.found_object: 
             if self.prev_det_img_timestamp < float(self.act_time):
-                obj_img = bridge.imgmsg_to_cv2(img)  #convert ROS to OpenCV
+                obj_img = bridge.imgmsg_to_cv2(img)  #convert ROS to OpenCV                        
                 path = os.path.join(os.path.dirname(__file__)) + "/images/detection/" +str(self.img_det_counter) + "_" + self.act_time + ".png"
                 cv2.imwrite(path, obj_img)
                 self.img_det_counter += 1  # incremental index
@@ -186,10 +187,12 @@ class JsonWriter:
             print("Saved map2d!")         
 
     def rgb_img_callback(self, img):           
-        
+        print("IMG CALLBACK!")  
+        print(os.path.dirname(__file__))
+        img_dir_path = os.path.join(os.path.dirname(__file__)) + "images/rgb/"
         if self.prev_rgb_img_timestamp < float(self.act_time):
             bgr_img = bridge.imgmsg_to_cv2(img)  #convert ROS to OpenCV
-            path = os.path.join(os.path.dirname(__file__)) + "/images/rgb/" +str(self.img_rgb_counter) + "_" + self.act_time + ".png"
+            path = img_dir_path +str(self.img_rgb_counter) + "_" + self.act_time + ".png"
             cv2.imwrite(path, cv2.cvtColor(bgr_img, cv2.COLOR_RGB2BGR))    
             self.img_rgb_counter += 1  # incremental index
             self.prev_rgb_img_timestamp = float(self.act_time)

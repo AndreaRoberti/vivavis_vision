@@ -11,6 +11,30 @@
         <param name="output_reference_frame" value="world" />
     </node>
 
+
+	<node name="coppelia_combiner" pkg="visavis_vision" type="coppelia_combiner" args="" respawn="false"
+		output="screen">
+
+		<!-- if false, it work on coppeliasim with rosInterface plugin-->
+		<param name="old_plugin" type="bool" value="false" />
+
+		<!-- subscribers topic-->
+		<param name="camera_color_name" type="string" value="/camera/color/image_rect_color" />
+		<param name="camera_depth_name" type="string"
+			value="/camera/aligned_depth_to_color/image_raw" />
+		<param name="depth_buffer_in" type="string" value="/coppelia/depth_buff" />
+		<param name="point_cloud_out" type="string" value="/camera/depth_registered/points" />
+
+
+		<param name="u_res" value="480" />
+		<param name="v_res" value="640" />
+		<param name="near_clip" value="1.00e-02" />
+		<param name="far_clip" value="5.00e+00" />
+		<param name="view_angle" value="60.0" />
+	</node>
+
+
+
     <!-- <node name="visavis_vision" pkg="visavis_vision" type="visavis_vision_node" respawn="false"
         launch-prefix="gdb -ex run - -args"
         output="screen"> -->
@@ -43,6 +67,12 @@
         <remap from="visavis_vision/ellipsoid_cloud" to="/visavis/ellipsoid_cloud" /> -->
 
     </node>
+
+
+    <node pkg="visavis_vision" name="ros_to_json_data" type="ros_to_json_data.py" />
+
+    <!-- <node pkg="visavis_vision" name="json_img_writer" type="json_writer_node.py" /> -->
+
 
     <node name="rviz_visavis" pkg="rviz" type="rviz"
         args="-d $(find visavis_vision)/rviz/visavis_vision.rviz" respawn="false" />

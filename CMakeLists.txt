@@ -70,6 +70,9 @@ add_executable(combiner src/rgb_d_combiner.cpp)
 target_link_libraries(combiner  ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 
+add_executable(coppelia_combiner src/coppelia_combiner.cpp)
+target_link_libraries(coppelia_combiner  ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
 add_executable(visavis_pcloud_stich src/pcloud_stitch.cc)
 # target_compile_options(visavis_pcloud_stich PRIVATE ${OpenMP_FLAGS})
 # target_link_libraries(visavis_pcloud_stich ${catkin_LIBRARIES} ${OpenMP_LIBS})

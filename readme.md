@@ -25,6 +25,37 @@ catkin build
 source devel/setup.bash
 ```
 
+## How to Run - Simulation
+
+Download CoppeliaSIM [here](https://www.coppeliarobotics.com/downloads)  *(from version 4.4 above)*
+
+
+- In one terminal run 
+
+```bash
+roscore
+```
+- After unzipped CoppeliaSIM archive, naviate to the directory and run it by typing 
+
+```bash
+./coppeliaSim.sh 
+```
+
+- Then in your caktin workspace
+
+```bash
+roslaunch visavis_node visavis_sim.launch
+```
+
+- If you want to save JSONs file
+
+```bash
+python3 json_writer_node.py 
+```
+
+Once you are ready, you can press PLAY on the simulator.
+
+
 ## Nodes Description
 
 <details>
