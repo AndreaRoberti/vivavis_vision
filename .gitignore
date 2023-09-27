@@ -1,2 +1,4 @@
 script/jsons/*
 script/images/*
+*.tar.*
+*.mp4

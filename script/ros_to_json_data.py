@@ -199,6 +199,7 @@ class ROS2JsonData:
 
         if len(self.act_cam_position) > 0:
             type_obj, closests_3d = self.find_absolute_closest_coordinates(self.act_cam_position[0],self.act_cam_position[1],self.act_cam_position[2])
+            # print('type_obj is ' + str(type_obj))
             if closests_3d is not None:
                 if (self.wall_names.get(type_obj)):
                     self.clust_id = self.wall_names[type_obj]
@@ -213,10 +214,19 @@ class ROS2JsonData:
                 center_pos_str = np.array2string(np.array(center_pos_array), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
                 center_ori_str = np.array2string(np.array(center_ori_array), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
                 nearest_str = np.array2string(np.array(closest_array), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+                # Create a 4x4 transformation matrix
+                
+                transform_matrix = tf.transformations.compose_matrix(translate=(self.act_cam_position[0],self.act_cam_position[1],self.act_cam_position[2]), 
+                    angles=tf.transformations.euler_from_quaternion((self.act_cam_orientation[0],self.act_cam_orientation[1],self.act_cam_orientation[2],self.act_cam_orientation[3])))
+                # print(transform_matrix)
+                transform_matrix_str = np.array2string(np.array(transform_matrix), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+                # print(transform_matrix_str)
                 strTmapcam = center_pos_str + ' ' + center_ori_str
 
                 # for near_p in nearest_obst_pts:
-                json_data.append([self.list_of_ids[self.clust_id], strTmapcam, center_pos_str, nearest_str, type_obj])
+                # json_data.append([self.list_of_ids[self.clust_id], strTmapcam, center_pos_str, nearest_str, type_obj])
+                # print('clust_id is ' + str(self.clust_id))
+                json_data.append([self.list_of_ids[self.clust_id], transform_matrix_str, center_pos_str, nearest_str, "obstacle"])
 
             if len(json_data) > 0:
                 df_json = pd.DataFrame(json_data, columns=["unique_id", "T_map_cam", "center_3d", "nearest_3d", "type"])
