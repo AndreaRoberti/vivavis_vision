@@ -1,0 +1,58 @@
+<launch>
+
+    <node name="pcloud_stich" pkg="visavis_vision" type="visavis_pcloud_stich" respawn="false"
+        output="screen">
+        <!-- <remap from="/in_pointcloud" to="/camera/depth_registered/points" /> -->
+        <remap from="/in_pointcloud" to="/local_map" />
+
+        <param name="voxel_size_stiching" value="0.1" />
+        <param name="voxel_size_input_cloud" value="0.1" />
+        <param name="max_cam_depth" value="3.0" />
+        <param name="output_reference_frame" value="map" />
+    </node>
+
+
+    <!-- <node name="visavis_vision" pkg="visavis_vision" type="visavis_vision_node" respawn="false"
+        launch-prefix="gdb -ex run - -args"
+        output="screen"> -->
+    <node name="visavis_vision" pkg="visavis_vision" type="visavis_vision_node"
+        respawn="false"
+        output="screen">
+        <param name="optical_frame" type="string" value="camera_color_optical_frame" />
+        <param name="fixed_frame" type="string" value="map" />
+
+        <param name="far_clip" type="double" value="4.0" />
+        <param name="near_clip" type="double" value="0.01" />
+
+        <!-- <param name="orig_cld_voxel_size" value="0.05" /> -->
+        <param name="orig_cld_voxel_size" value="0.05" /> <!-- 0.1 -->
+
+        <param name="object_cluster_distance" type="double" value="0.3" />
+        <param name="min_object_cluster_size" type="int" value="1" />
+
+        <remap from="in_cloud" to="/stiched_pointcloud" />
+        <!-- <remap from="in_cloud" to="/camera/depth_registered/points"/> -->
+        <!-- <remap from="in_cloud" to="/slam_registration/sparse_pointcloud" /> -->
+        <!-- <remap from="walls_cloud" to="/planes"/> -->
+
+
+        <!-- <remap from="debug_pose" to="/visavis/ellipsoid/debug_pose" /> -->
+        <!-- private handler-->
+        <!-- <remap from="visavis_vision/walls_cloud" to="/visavis/filter_cloud" />
+        <remap from="visavis_vision/out_cloud_array" to="/visavis/cloud_array" />
+        <remap from="visavis_vision/ellipsoid" to="/visavis/ellipsoid_data" />
+        <remap from="visavis_vision/ellipsoid_cloud" to="/visavis/ellipsoid_cloud" /> -->
+
+    </node>
+
+
+    <node pkg="visavis_vision" name="ros_to_json_data" type="ros_to_json_data.py" />
+
+    <!-- <node pkg="visavis_vision" name="json_img_writer" type="json_writer_node.py" /> -->
+
+
+    <node name="rviz_visavis" pkg="rviz" type="rviz"
+        args="-d $(find visavis_vision)/rviz/visavis_vision.rviz" respawn="false" />
+
+
+</launch>
