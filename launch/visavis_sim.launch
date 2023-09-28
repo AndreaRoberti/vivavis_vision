@@ -69,7 +69,7 @@
     </node>
 
 
-    <node pkg="visavis_vision" name="ros_to_json_data" type="ros_to_json_data.py" />
+    <!-- <node pkg="visavis_vision" name="ros_to_json_data" type="ros_to_json_data.py" /> -->
 
     <!-- <node pkg="visavis_vision" name="json_img_writer" type="json_writer_node.py" /> -->
 

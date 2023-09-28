@@ -84,7 +84,8 @@ class ROS2JsonData:
     def update(self):
         self.getCameraPose()
         self.publish_json_df()
-        self.publish_human_workspace()
+        # self.publish_human_workspace()
+        self.publish_complete_human_workspace()
 
     def getCameraPose(self):
         try:
@@ -123,13 +124,15 @@ class ROS2JsonData:
 
         for id, obstacle_coords in self.obstacles.items():
             distance_obs = math.sqrt((obstacle_coords[0] - act_x)**2 + (obstacle_coords[1] - act_y)**2 + (obstacle_coords[2] - act_z)**2)
-            if distance_obs < min_obstacle_distance:
+            # print("distance_obs" + str(distance_obs))
+            if distance_obs < min_obstacle_distance and distance_obs != 0.0 :
                 min_obstacle_distance = distance_obs
                 closest_obstacle = [id, obstacle_coords]
 
         for wall_name, wall_coords in self.walls.items():
             distance_w = math.sqrt((wall_coords[0] - act_x)**2 + (wall_coords[1] - act_y)**2 + (wall_coords[2] - act_z)**2)
-            if distance_w < min_wall_distance:
+            # print("distance_w" + str(distance_w))
+            if distance_w < min_wall_distance and distance_w != 0.0 :
                 min_wall_distance = distance_w
                 closest_wall = [wall_name,wall_coords]
 
@@ -187,6 +190,49 @@ class ROS2JsonData:
         if len(json_data) > 0:      
             df_json = pd.DataFrame(json_data, columns=["wall_type", "a", "b", "c", "d", "shortest_distance", "num_points", "plane_center_x", "plane_center_y", "plane_center_z", "color_id"])
             self.json_walls_equations_pub.publish(str(df_json.to_json(orient='index')))
+
+
+    def publish_complete_human_workspace(self):
+        json_data = []
+        for w in self.walls_info.walls:
+            # print(w)
+            if w.header.frame_id and w.header.frame_id != "floor" and  w.header.frame_id != "ceiling" :
+                # print(w.header.frame_id)
+                self.walls[w.header.frame_id] = [w.pose.position.x, w.pose.position.y, w.pose.position.z]
+
+        if len(self.act_cam_position) > 0:
+            transform_matrix = tf.transformations.compose_matrix(translate=(self.act_cam_position[0],self.act_cam_position[1],self.act_cam_position[2]), 
+                    angles=tf.transformations.euler_from_quaternion((self.act_cam_orientation[0],self.act_cam_orientation[1],self.act_cam_orientation[2],self.act_cam_orientation[3])))
+            transform_matrix_str = np.array2string(np.array(transform_matrix), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+            # print(transform_matrix_str)
+
+            for k_w, k_v in self.walls.items():
+                center_pos_str = np.array2string(np.array([k_v[0],k_v[1],k_v[2]]), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+                
+                type_obj, closests_3d = self.find_absolute_closest_coordinates(k_v[0],k_v[1],k_v[2])
+                
+                closest_array = np.array(closests_3d[1])
+                nearest_str = np.array2string(np.array(closest_array), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+                
+                
+                list_walls = [self.list_of_ids[self.wall_names[k_w]], transform_matrix_str, center_pos_str, nearest_str, "wall-"+k_w]
+                json_data.append(list_walls)
+
+            for k_o, v_o in self.obstacles.items():
+                center_obs_pos_str = np.array2string(np.array([v_o[0],v_o[1],v_o[2]]), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+                
+                type_obj_obs, closests_3d_obs = self.find_absolute_closest_coordinates(v_o[0],v_o[1],v_o[2])
+                
+                closest_array_obs = np.array(closests_3d_obs[1])
+                nearest_str_obs = np.array2string(np.array(closest_array_obs), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
+                
+                list_objects = [self.list_of_ids[int(k_o)+6], transform_matrix_str, center_obs_pos_str, nearest_str_obs, "obstacle"]
+                json_data.append(list_objects)
+
+            if len(json_data) > 0:
+                df_json = pd.DataFrame(json_data, columns=["unique_id", "T_map_cam", "center_3d", "nearest_3d", "type"])
+                self.json_human_workspace_pub.publish(str(df_json.to_json(orient='index')))
+
 
     def publish_human_workspace(self):
         json_data = []
@@ -255,7 +301,7 @@ if __name__ == '__main__':
     
     ros_json_data = ROS2JsonData()
 
-    rate = 100 # Hz
+    rate = 10 # Hz
     ros_rate = rospy.Rate(rate)
 			  
     while not rospy.is_shutdown():
