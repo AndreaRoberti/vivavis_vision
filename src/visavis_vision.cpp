@@ -25,6 +25,7 @@ VisavisVision::VisavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     // Output
     cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("walls_cloud", 1);
     cloud_obs_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("obstacles_cloud", 1);
+    cloud_nearest_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("nearest_cloud", 1);
     ellipsoid_cloud_pub = private_nh_.advertise<sensor_msgs::PointCloud2>("ellipsoid_cloud", 1);
 
     // cloud_array_pub = private_nh_.advertise<visavis_vision::CloudArray>("out_cloud_array", 1);
@@ -218,7 +219,7 @@ void VisavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
             pcl::getMinMax3D(*cloud_plane, minp, maxp);
             pcl::compute3DCentroid<pcl::PointXYZRGB>(*cloud_plane, centroid);
             // calculate TFs
-            setPlaneTransform(idx, cloud_plane->points.size(), coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
+            setPlaneTransform(idx, cloud_plane, coefficients->values[0], coefficients->values[1], coefficients->values[2], coefficients->values[3],
                               centroid, minp, maxp);
 
             // Remove the planar inliers, extract the rest
@@ -254,9 +255,32 @@ void VisavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     cloud_obs_pub.publish(cloud_msg_2);
 
     walls_info_pub.publish(walls_info);
+
+    // pub nearst
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr nearest_pcd(new pcl::PointCloud<pcl::PointXYZRGB>);
+    for (auto &w : walls_info.walls)
+    {
+        if (w.header.frame_id != "floor" && w.header.frame_id != "ceiling" && w.closest_point.x != 0.0 && w.closest_point.y != 0.0 && w.closest_point.z != 0.0)
+        {
+            pcl::PointXYZRGB point;
+            point.x = w.closest_point.x;
+            point.y = w.closest_point.y;
+            point.z = w.closest_point.z;
+            point.r = 255;
+            point.g = 0;
+            point.b = 0;
+            nearest_pcd->push_back(point);
+        }
+    }
+    sensor_msgs::PointCloud2 cloud_msg_3;
+    pcl::toROSMsg(*nearest_pcd, cloud_msg_3);
+    cloud_msg_3.header.frame_id = fixed_frame;
+    cloud_nearest_pub.publish(cloud_msg_3);
+
+    // end pub nearst
 }
 
-void VisavisVision::setPlaneTransform(int id, int num_points, float a, float b, float c, float d,
+void VisavisVision::setPlaneTransform(int id, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, float a, float b, float c, float d,
                                       Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p)
 {
     Eigen::Vector3f plane_normal(a, b, c);
@@ -285,12 +309,32 @@ void VisavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     // Extract the z-rotation (in radians) from the Euler angles
     float z_rotation = euler_angles[2];
 
+    pcl::search::KdTree<pcl::PointXYZRGB> kdtree; // PointT
+    kdtree.setInputCloud(cloud);
+    // int closest_point_index;
+    // float closest_point_squared_distance;
+
+    std::vector<int> closest_point_index(1);
+    std::vector<float> closest_point_squared_distance(1);
+
+    pcl::PointXYZRGB query_point;
+    query_point.x = getCameraPose().at<float>(0, 3);
+    query_point.y = getCameraPose().at<float>(1, 3);
+    query_point.z = getCameraPose().at<float>(2, 3);
+
+    kdtree.nearestKSearch(query_point, 1, closest_point_index, closest_point_squared_distance);
+    // pcl::PointXYZRGB closest_point = cloud->points[closest_point_index];
+    geometry_msgs::Point closest_point;
+    closest_point.x = cloud->points[closest_point_index.at(0)].x;
+    closest_point.y = cloud->points[closest_point_index.at(0)].y;
+    closest_point.z = cloud->points[closest_point_index.at(0)].z;
+
     visavis_vision::WallInfo wall;
     wall.a = a;
     wall.b = b;
     wall.c = c;
     wall.d = d;
-    wall.num_points = num_points;
+    wall.num_points = cloud->points.size();
     wall.header.stamp = ros::Time::now();
     wall.pose.position.x = centroid(0);
     wall.pose.position.y = centroid(1);
@@ -300,11 +344,17 @@ void VisavisVision::setPlaneTransform(int id, int num_points, float a, float b, 
     wall.pose.orientation.z = plane_quaternion.z();
     wall.pose.orientation.w = plane_quaternion.w();
 
+    sensor_msgs::PointCloud2 cloud_msg;
+    pcl::toROSMsg(*cloud, cloud_msg);
+    cloud_msg.header.frame_id = fixed_frame;
+    wall.cloud = cloud_msg;
+    wall.closest_point = closest_point;
+
     if (radiansToDegrees(angle) < floor_threshold)
     {
         wall.header.frame_id = "floor";
-        walls_info.walls[0] = wall;
         wall.color_id = 0;
+        walls_info.walls[0] = wall;
     }
     else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
              centroid[0] < getCameraPose().at<float>(0, 3) &&
@@ -370,16 +420,16 @@ visualization_msgs::Marker VisavisVision::addVisualObject(int id, Eigen::Vector4
     plane_marker.pose.orientation.x = orientation.x();
     plane_marker.pose.orientation.y = orientation.y();
     plane_marker.pose.orientation.z = orientation.z();
-    plane_marker.pose.position.x = centroid[0]; // coefficients->values[0];
-    plane_marker.pose.position.y = centroid[1]; // coefficients->values[1];
-    plane_marker.pose.position.z = centroid[2]; // coefficients->values[2];
+    plane_marker.pose.position.x = centroid[0];         // coefficients->values[0];
+    plane_marker.pose.position.y = centroid[1];         // coefficients->values[1];
+    plane_marker.pose.position.z = centroid[2];         // coefficients->values[2];
     plane_marker.scale.x = 0.1 + (max_p[0] - min_p[0]); //  offset + ()
     plane_marker.scale.y = 0.1 + (max_p[1] - min_p[1]); //  offset + ()
-    plane_marker.scale.z = 0.1 + (max_p[2] - min_p[2]); //  offset + () 
-    plane_marker.color.r = color[0];            // 1.0;
-    plane_marker.color.g = color[1];            // 1.0;
-    plane_marker.color.b = color[2];            // 0.0;
-    plane_marker.color.a = color[3];            // 0.5;                                       // Adjust the transparency of the visualization
+    plane_marker.scale.z = 0.1 + (max_p[2] - min_p[2]); //  offset + ()
+    plane_marker.color.r = color[0];                    // 1.0;
+    plane_marker.color.g = color[1];                    // 1.0;
+    plane_marker.color.b = color[2];                    // 0.0;
+    plane_marker.color.a = color[3];                    // 0.5;                                       // Adjust the transparency of the visualization
     return plane_marker;
 }
 

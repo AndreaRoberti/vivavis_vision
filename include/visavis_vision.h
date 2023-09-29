@@ -34,6 +34,8 @@
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 
+#include <pcl/kdtree/kdtree_flann.h>
+
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include <pcl/segmentation/extract_clusters.h>
@@ -82,7 +84,7 @@ private:
     int max_object_cluster_size_, min_object_cluster_size_;
     int num_obj;
 
-    ros::Publisher cloud_pub, cloud_obs_pub, cloud_array_pub, ellipsoid_pub, ellipsoid_cloud_pub, pose_pub, visual_walls_pub, visual_obstacles_pub;
+    ros::Publisher cloud_pub, cloud_obs_pub, cloud_array_pub, cloud_nearest_pub, ellipsoid_pub, ellipsoid_cloud_pub, pose_pub, visual_walls_pub, visual_obstacles_pub;
 
     // ros::Publisher left_wall_info, right_wall_info, floor_wall_info, ceiling_wall_info, front_wall_info, back_wall_info;
     ros::Publisher walls_info_pub;
@@ -105,7 +107,7 @@ private:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_final_obstacles;
 
     cv::Mat getCameraPose();
-    void setPlaneTransform(int id, int num_points, float a, float b, float c, float d,
+    void setPlaneTransform(int id, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, float a, float b, float c, float d,
                            Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p);
     void createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     visualization_msgs::Marker addVisualObject(int id, Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p, Eigen::Vector4f color,

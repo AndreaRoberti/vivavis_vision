@@ -198,7 +198,7 @@ class ROS2JsonData:
             # print(w)
             if w.header.frame_id and w.header.frame_id != "floor" and  w.header.frame_id != "ceiling" :
                 # print(w.header.frame_id)
-                self.walls[w.header.frame_id] = [w.pose.position.x, w.pose.position.y, w.pose.position.z]
+                self.walls[w.header.frame_id] = [w.pose.position.x, w.pose.position.y, w.pose.position.z, w.closest_point.x, w.closest_point.y, w.closest_point.z]
 
         if len(self.act_cam_position) > 0:
             transform_matrix = tf.transformations.compose_matrix(translate=(self.act_cam_position[0],self.act_cam_position[1],self.act_cam_position[2]), 
@@ -209,9 +209,10 @@ class ROS2JsonData:
             for k_w, k_v in self.walls.items():
                 center_pos_str = np.array2string(np.array([k_v[0],k_v[1],k_v[2]]), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
                 
-                type_obj, closests_3d = self.find_absolute_closest_coordinates(k_v[0],k_v[1],k_v[2])
-                
-                closest_array = np.array(closests_3d[1])
+                # type_obj, closests_3d = self.find_absolute_closest_coordinates(k_v[0],k_v[1],k_v[2])
+                # closest_array = np.array(closests_3d[1])
+
+                closest_array = np.array([k_v[3],k_v[4],k_v[5]])
                 nearest_str = np.array2string(np.array(closest_array), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
                 
                 

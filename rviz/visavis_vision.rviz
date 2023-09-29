@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /TF1/Frames1
         - /PoseArray1
+        - /NEAREST_PCD1
       Splitter Ratio: 0.49705880880355835
     Tree Height: 251
   - Class: rviz/Selection
@@ -230,6 +231,7 @@ Visualization Manager:
         1: true
         2: true
         3: true
+        5: true
       Queue Size: 100
       Value: true
     - Class: rviz/TF
@@ -239,6 +241,8 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        back:
+          Value: true
         camera_color_optical_frame:
           Value: true
         camera_depth_optical_frame:
@@ -251,6 +255,8 @@ Visualization Manager:
           Value: true
         left:
           Value: true
+        right:
+          Value: true
         world:
           Value: true
       Marker Alpha: 1
@@ -261,6 +267,8 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
+          back:
+            {}
           camera_link:
             camera_color_optical_frame:
               {}
@@ -271,6 +279,8 @@ Visualization Manager:
           front:
             {}
           left:
+            {}
+          right:
             {}
       Update Interval: 0
       Value: true
@@ -319,6 +329,34 @@ Visualization Manager:
       Transport Hint: raw
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: RGB8
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: NEAREST_PCD
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.10000000149011612
+      Style: Spheres
+      Topic: /visavis_vision/nearest_cloud
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -347,7 +385,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 6.413195610046387
+      Distance: 6.276914596557617
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -363,9 +401,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5703983306884766
+      Pitch: 0.7703983783721924
       Target Frame: <Fixed Frame>
-      Yaw: 4.133591651916504
+      Yaw: 5.003591537475586
     Saved: ~
 Window Geometry:
   Displays:

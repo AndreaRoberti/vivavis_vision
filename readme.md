@@ -134,6 +134,8 @@ The `WallInfoArray` is an array of 6 elements [floor, left, right, front, back, 
 - `float64 num_points`
 - `int64 color_id`
 - `geometry_msgs/Pose pose`
+- `geometry_msgs/Point closest_point`
+- `sensor_msgs/PointCloud2 cloud`
 
 
 </details>
