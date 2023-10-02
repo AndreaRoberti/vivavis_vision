@@ -471,14 +471,14 @@ void VisavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
                 {
                     if (!w.header.frame_id.empty() && !discard)
                     {
-                        ROS_INFO_STREAM(" object " << i << "  is on plane " << w.header.frame_id);
+                        // ROS_INFO_STREAM(" object " << i << "  is on plane " << w.header.frame_id);
                         discard = true;
                     }
                 }
             }
             if (!discard)
             {
-                ROS_INFO_STREAM(" false disc , pub object " << i);
+                // ROS_INFO_STREAM(" false disc , pub object " << i);
                 geometry_msgs::Pose pose;
                 pose.position.x = c[0];
                 pose.position.y = c[1];
@@ -523,6 +523,8 @@ void VisavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
                 visualize_obstacles.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5)));
             }
         } // end for i-objs
+
+        ROS_INFO_STREAM("obstacles_info_pub HAS " << obstacles_info.obstacles.size() << "  objects");
         obstacles_info_pub.publish(obstacles_info);
         visual_obstacles_pub.publish(visualize_obstacles);
     }

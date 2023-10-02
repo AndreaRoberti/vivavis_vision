@@ -238,6 +238,8 @@ class ROS2JsonData:
                 list_objects = [self.list_of_ids[int(k_o)+6], transform_matrix_str, center_obs_pos_str, nearest_str_obs, "obstacle"]
                 json_data.append(list_objects)
 
+            self.obstacles.clear()
+
             if len(json_data) > 0:
                 df_json = pd.DataFrame(json_data, columns=["unique_id", "T_map_cam", "center_3d", "nearest_3d", "type"])
                 self.json_human_workspace_pub.publish(str(df_json.to_json(orient='index')))

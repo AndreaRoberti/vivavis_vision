@@ -193,7 +193,8 @@ class JsonWriter:
         if self.prev_rgb_img_timestamp < float(self.act_time):
             bgr_img = bridge.imgmsg_to_cv2(img)  #convert ROS to OpenCV
             path = img_dir_path +str(self.img_rgb_counter) + "_" + self.act_time + ".png"
-            cv2.imwrite(path, cv2.cvtColor(bgr_img, cv2.COLOR_RGB2BGR))    
+            flipped_image = cv2.flip(bgr_img, 1) # IN SIM FLIP IMAGE
+            cv2.imwrite(path, cv2.cvtColor(flipped_image, cv2.COLOR_RGB2BGR))    
             self.img_rgb_counter += 1  # incremental index
             self.prev_rgb_img_timestamp = float(self.act_time)
             
