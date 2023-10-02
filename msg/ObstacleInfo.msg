@@ -1,0 +1,4 @@
+Header header
+geometry_msgs/Pose pose
+geometry_msgs/Point closest_point
+sensor_msgs/PointCloud2 cloud

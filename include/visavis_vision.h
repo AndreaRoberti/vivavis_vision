@@ -51,6 +51,10 @@
 #include <visavis_vision/EllipsoidArray.h>
 #include <visavis_vision/WallInfo.h>
 #include <visavis_vision/WallInfoArray.h>
+
+#include <visavis_vision/ObstacleInfo.h>
+#include <visavis_vision/ObstacleInfoArray.h>
+
 #include <math.h>
 
 #define degreesToRadians(angleDegrees) (angleDegrees * M_PI / 180.0) // Converts degrees to radians
@@ -88,6 +92,7 @@ private:
 
     // ros::Publisher left_wall_info, right_wall_info, floor_wall_info, ceiling_wall_info, front_wall_info, back_wall_info;
     ros::Publisher walls_info_pub;
+    ros::Publisher obstacles_info_pub;
     ros::Publisher human_ws_pub;
 
     image_transport::ImageTransport it_;
@@ -99,6 +104,7 @@ private:
     visualization_msgs::Marker human_ws;
 
     visavis_vision::WallInfoArray walls_info;
+    visavis_vision::ObstacleInfoArray obstacles_info;
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr xyz_cld_ptr;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr prev_xyz_cld_ptr;

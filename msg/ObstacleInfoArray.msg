@@ -1,0 +1,1 @@
+visavis_vision/ObstacleInfo[] obstacles

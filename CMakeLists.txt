@@ -40,6 +40,8 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(FILES
 WallInfo.msg
 WallInfoArray.msg
+ObstacleInfo.msg
+ObstacleInfoArray.msg
 CloudArray.msg
 PointArray.msg
 PoseStampedArray.msg

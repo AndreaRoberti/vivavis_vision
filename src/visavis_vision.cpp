@@ -31,6 +31,7 @@ VisavisVision::VisavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
     // cloud_array_pub = private_nh_.advertise<visavis_vision::CloudArray>("out_cloud_array", 1);
     ellipsoid_pub = private_nh_.advertise<visavis_vision::EllipsoidArray>("ellipsoid", 1);
     walls_info_pub = private_nh_.advertise<visavis_vision::WallInfoArray>("walls_info", 1);
+    obstacles_info_pub = private_nh_.advertise<visavis_vision::ObstacleInfoArray>("obstacles_info", 1);
 
     visual_walls_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_walls", 1, true);
     visual_obstacles_pub = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_obstacles", 1, true);
@@ -267,11 +268,24 @@ void VisavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
             point.y = w.closest_point.y;
             point.z = w.closest_point.z;
             point.r = 255;
-            point.g = 0;
+            point.g = 255;
             point.b = 0;
             nearest_pcd->push_back(point);
         }
     }
+
+    for (auto &o : obstacles_info.obstacles)
+    {
+        pcl::PointXYZRGB point;
+        point.x = o.closest_point.x;
+        point.y = o.closest_point.y;
+        point.z = o.closest_point.z;
+        point.r = 255;
+        point.g = 255;
+        point.b = 0;
+        nearest_pcd->push_back(point);
+    }
+
     sensor_msgs::PointCloud2 cloud_msg_3;
     pcl::toROSMsg(*nearest_pcd, cloud_msg_3);
     cloud_msg_3.header.frame_id = fixed_frame;
@@ -309,11 +323,8 @@ void VisavisVision::setPlaneTransform(int id, pcl::PointCloud<pcl::PointXYZRGB>:
     // Extract the z-rotation (in radians) from the Euler angles
     float z_rotation = euler_angles[2];
 
-    pcl::search::KdTree<pcl::PointXYZRGB> kdtree; // PointT
+    pcl::search::KdTree<pcl::PointXYZRGB> kdtree;
     kdtree.setInputCloud(cloud);
-    // int closest_point_index;
-    // float closest_point_squared_distance;
-
     std::vector<int> closest_point_index(1);
     std::vector<float> closest_point_squared_distance(1);
 
@@ -442,6 +453,9 @@ void VisavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
         geometry_msgs::PoseArray obstacles_poses;
         obstacles_poses.header.frame_id = fixed_frame;
         visualize_obstacles.markers.clear();
+        obstacles_info.obstacles.clear();
+        obstacles_poses.poses.clear();
+
         for (size_t i = 0; i < num_obj; i++)
         {
             bool discard = false;
@@ -474,10 +488,43 @@ void VisavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
                 obstacles_poses.poses.push_back(pose);
                 pose_pub.publish(obstacles_poses);
 
+                visavis_vision::ObstacleInfo obstacle;
+                obstacle.header.frame_id = fixed_frame;
+                obstacle.header.stamp = ros::Time::now();
+                obstacle.pose.position.x = c[0];
+                obstacle.pose.position.y = c[1];
+                obstacle.pose.position.z = c[2];
+                obstacle.pose.orientation.x = obstacle.pose.orientation.y = obstacle.pose.orientation.z = 0;
+                obstacle.pose.orientation.w = 1;
+
+                sensor_msgs::PointCloud2 cloud_msg;
+                pcl::toROSMsg(*objects.at(i), cloud_msg);
+                cloud_msg.header.frame_id = fixed_frame;
+                obstacle.cloud = cloud_msg;
+
+                pcl::search::KdTree<pcl::PointXYZRGB> kdtree;
+                kdtree.setInputCloud(objects.at(i));
+                std::vector<int> closest_point_index(1);
+                std::vector<float> closest_point_squared_distance(1);
+
+                pcl::PointXYZRGB query_point;
+                query_point.x = getCameraPose().at<float>(0, 3);
+                query_point.y = getCameraPose().at<float>(1, 3);
+                query_point.z = getCameraPose().at<float>(2, 3);
+
+                kdtree.nearestKSearch(query_point, 1, closest_point_index, closest_point_squared_distance);
+                // geometry_msgs::Point closest_point;
+                obstacle.closest_point.x = objects.at(i)->points[closest_point_index.at(0)].x;
+                obstacle.closest_point.y = objects.at(i)->points[closest_point_index.at(0)].y;
+                obstacle.closest_point.z = objects.at(i)->points[closest_point_index.at(0)].z;
+
+                obstacles_info.obstacles.push_back(obstacle);
+
                 visualize_obstacles.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5)));
-                visual_obstacles_pub.publish(visualize_obstacles);
             }
-        }
+        } // end for i-objs
+        obstacles_info_pub.publish(obstacles_info);
+        visual_obstacles_pub.publish(visualize_obstacles);
     }
 }
 

@@ -28,6 +28,7 @@ from scipy.spatial import ConvexHull
 from visualization_msgs.msg import Marker
 
 from visavis_vision.msg import WallInfo, WallInfoArray
+from visavis_vision.msg import ObstacleInfo, ObstacleInfoArray
 
 bridge = CvBridge()
 
@@ -42,7 +43,8 @@ class ROS2JsonData:
         # self.json_objects_pub = rospy.Publisher('/out/json_objects', String, queue_size=100)
 
         rospy.Subscriber('visavis_vision/walls_info', WallInfoArray, self.wall_info_callback)
-        rospy.Subscriber('visavis_vision/obstacles_pose', PoseArray, self.obstacles_pose_array_callback)
+        rospy.Subscriber('visavis_vision/obstacles_info', ObstacleInfoArray, self.obstacle_info_callback)
+        # rospy.Subscriber('visavis_vision/obstacles_pose', PoseArray, self.obstacles_pose_array_callback)
         rospy.Subscriber('visavis_vision/human_ws', Marker, self.human_ws_callback)
 
         
@@ -68,15 +70,19 @@ class ROS2JsonData:
     def wall_info_callback(self, data):
         self.walls_info = data
 
-    def obstacles_pose_array_callback(self, msg):
-        for i, pose in enumerate(msg.poses):
-            # rospy.loginfo("Obstacle: Pose %d:\nPosition: %f, %f, %f\nOrientation: %f, %f, %f, %f",
-                        #   i,
-                        #   pose.position.x, pose.position.y, pose.position.z,
-                        #   pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
+    def obstacle_info_callback(self, data):
+        for i, obstacle in enumerate(data.obstacles):
+            self.obstacles[i] = [obstacle.position.x, obstacle.position.y, obstacle.position.z, obstacle.closest_point.x, obstacle.closest_point.y, obstacle.closest_point.z, ]
 
-            # self.obstacles['id' +str(i)] = [pose.position.x, pose.position.y, pose.position.z]
-            self.obstacles[i] = [pose.position.x, pose.position.y, pose.position.z]
+    # def obstacles_pose_array_callback(self, msg):
+    #     for i, pose in enumerate(msg.poses):
+    #         # rospy.loginfo("Obstacle: Pose %d:\nPosition: %f, %f, %f\nOrientation: %f, %f, %f, %f",
+    #                     #   i,
+    #                     #   pose.position.x, pose.position.y, pose.position.z,
+    #                     #   pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
+
+    #         # self.obstacles['id' +str(i)] = [pose.position.x, pose.position.y, pose.position.z]
+    #         self.obstacles[i] = [pose.position.x, pose.position.y, pose.position.z]
 
     def human_ws_callback(self, msg):
         self.human_ws = msg
@@ -222,9 +228,11 @@ class ROS2JsonData:
             for k_o, v_o in self.obstacles.items():
                 center_obs_pos_str = np.array2string(np.array([v_o[0],v_o[1],v_o[2]]), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
                 
-                type_obj_obs, closests_3d_obs = self.find_absolute_closest_coordinates(v_o[0],v_o[1],v_o[2])
-                
-                closest_array_obs = np.array(closests_3d_obs[1])
+                # type_obj_obs, closests_3d_obs = self.find_absolute_closest_coordinates(v_o[0],v_o[1],v_o[2])
+                # closest_array_obs = np.array(closests_3d_obs[1])
+
+                closest_array_obs = np.array([v_o[3],v_o[4],v_o[5]])
+
                 nearest_str_obs = np.array2string(np.array(closest_array_obs), formatter={'float_kind':lambda x: "%.8f" % x}).replace(' ',',').replace('\n',',').replace(',,',',')
                 
                 list_objects = [self.list_of_ids[int(k_o)+6], transform_matrix_str, center_obs_pos_str, nearest_str_obs, "obstacle"]
