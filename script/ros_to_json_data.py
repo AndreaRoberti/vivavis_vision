@@ -72,7 +72,7 @@ class ROS2JsonData:
 
     def obstacle_info_callback(self, data):
         for i, obstacle in enumerate(data.obstacles):
-            self.obstacles[i] = [obstacle.position.x, obstacle.position.y, obstacle.position.z, obstacle.closest_point.x, obstacle.closest_point.y, obstacle.closest_point.z, ]
+            self.obstacles[i] = [obstacle.pose.position.x, obstacle.pose.position.y, obstacle.pose.position.z, obstacle.closest_point.x, obstacle.closest_point.y, obstacle.closest_point.z, ]
 
     # def obstacles_pose_array_callback(self, msg):
     #     for i, pose in enumerate(msg.poses):
