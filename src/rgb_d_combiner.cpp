@@ -1,4 +1,4 @@
-#include <rgb_d_combiner.h>
+#include <visavis_vision/rgb_d_combiner.h>
 
 CombineDepthRgb::CombineDepthRgb(ros::NodeHandle& nh) :
         nh_(nh), private_nh_("~"), it_(nh), cloud_semantic(new pcl::PointCloud<pcl::PointXYZRGB>)
