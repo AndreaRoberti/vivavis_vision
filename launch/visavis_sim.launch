@@ -1,5 +1,7 @@
 <launch>
 
+    <node name="republishL" type="republish" pkg="image_transport" output="screen" args="raw in:=/camera/color/image_rect_color compressed out:=/camera/color/image_rect_color" />
+
     <node name="pcloud_stich" pkg="visavis_vision" type="visavis_pcloud_stich" respawn="false"
         output="screen">
         <remap from="/in_pointcloud" to="/camera/depth_registered/points" />
@@ -69,7 +71,7 @@
     </node>
 
 
-    <!-- <node pkg="visavis_vision" name="ros_to_json_data" type="ros_to_json_data.py" /> -->
+    <node pkg="visavis_vision" name="ros_to_json_data" type="ros_to_json_data.py" />
 
     <!-- <node pkg="visavis_vision" name="json_img_writer" type="json_writer_node.py" /> -->
 
