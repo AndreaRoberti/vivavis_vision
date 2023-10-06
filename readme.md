@@ -10,6 +10,13 @@
 
  *example launch files in the launch folder*
 
+
+## Requirements
+
+- Ubuntu 20.04
+
+- ROS Noetic 
+
 ## How To Build
 
 - Clone this repo in your *catkin_ws*
@@ -54,6 +61,32 @@ python3 json_writer_node.py
 ```
 
 Once you are ready, you can press PLAY on the simulator.
+
+## Custom ROS Messages
+
+### WallInfo
+
+The `WallInfoArray` is an array of 6 elements [floor, left, right, front, back, ceiling] of `WallInfo`, each defined by the following structure:
+
+- `Header header`
+- `float64 a`
+- `float64 b`
+- `float64 c`
+- `float64 d`
+- `float64 num_points`
+- `int64 color_id`
+- `geometry_msgs/Pose pose`
+- `geometry_msgs/Point closest_point`
+- `sensor_msgs/PointCloud2 cloud`
+
+### ObstacleInfo
+
+The `ObstacleInfoArray` is an array of `ObstacleInfo`, defined by the following structure:
+
+- `Header header`
+- `geometry_msgs/Pose pose`
+- `geometry_msgs/Point closest_point`
+- `sensor_msgs/PointCloud2 cloud`
 
 
 ## Nodes Description
@@ -101,13 +134,13 @@ This is the main node that elaborates the incoming point cloud and seperates the
 
 - `cloud_obs_pub` (topic: `obstacles_cloud`): Publishes a `sensor_msgs::PointCloud2` message representing obstacle points.
 
-- `ellipsoid_cloud_pub` (topic: `ellipsoid_cloud`): Publishes a `sensor_msgs::PointCloud2` message containing ellipsoid points.
+- `cloud_nearest_pub_` (topic: `nearest_cloud`): Publishes a `sensor_msgs::PointCloud2` message containing all the closest points respect to the camera.
 
 ### Object Publishers
 
-- `ellipsoid_pub` (topic: `ellipsoid`): Publishes an `visavis_vision::EllipsoidArray` message representing ellipsoids.
+- `obstacles_info_pub_` (topic: `walls_info`): Publishes a `visavis_vision::ObstacleInfoArray` message containing information about obstacles.
 
-- `walls_info_pub` (topic: `walls_info`): Publishes a `visavis_vision::WallInfoArray` message containing information about walls.
+- `walls_info_pub_` (topic: `walls_info`): Publishes a `visavis_vision::WallInfoArray` message containing information about walls.
 
 ### Visualization Publishers
 
@@ -116,27 +149,6 @@ This is the main node that elaborates the incoming point cloud and seperates the
 - `visual_obstacles_pub` (topic: `visual_obstacles`): Publishes a `visualization_msgs::MarkerArray` message for visualizing obstacles.
 
 - `human_ws_pub` (topic: `human_ws`): Publishes a `visualization_msgs::Marker` message for visualizing human workspace.
-
-### Obstacles Poses Publisher
-
-- `pose_pub` (topic: `obstacles_pose`): Publishes a `geometry_msgs::PoseArray` message for obstacles poses.
-
-
-## WallInfo Message
-
-The `WallInfoArray` is an array of 6 elements [floor, left, right, front, back, ceiling] of `WallInfo`, each defined by the following structure:
-
-- `Header header`
-- `float64 a`
-- `float64 b`
-- `float64 c`
-- `float64 d`
-- `float64 num_points`
-- `int64 color_id`
-- `geometry_msgs/Pose pose`
-- `geometry_msgs/Point closest_point`
-- `sensor_msgs/PointCloud2 cloud`
-
 
 </details>
 
