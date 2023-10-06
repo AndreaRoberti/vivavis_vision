@@ -82,10 +82,10 @@ namespace visavis
         std::string optical_frame_, fixed_frame_;
         double far_clip_distance_, near_clip_distance_;
 
-        float orig_cld_voxel_size;
+        float orig_cld_voxel_size_;
         double object_cluster_distance_;
         int max_object_cluster_size_, min_object_cluster_size_;
-        int num_obj;
+        int num_obj_;
 
         ros::Publisher cloud_pub_, cloud_obs_pub_, cloud_array_pub_, cloud_nearest_pub_, ellipsoid_pub_, ellipsoid_cloud_pub_, pose_pub_, visual_walls_pub_, visual_obstacles_pub_;
 
@@ -98,29 +98,28 @@ namespace visavis
 
         ros::Subscriber cloud_sub_;
 
-        visualization_msgs::MarkerArray visualize_walls, visualize_obstacles;
-        visualization_msgs::Marker human_ws;
+        visualization_msgs::MarkerArray visualize_walls_, visualize_obstacles_;
 
-        visavis_vision::WallInfoArray walls_info;
-        visavis_vision::ObstacleInfoArray obstacles_info;
+        visavis_vision::WallInfoArray walls_info_;
+        visavis_vision::ObstacleInfoArray obstacles_info_;
 
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr xyz_cld_ptr;
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr prev_xyz_cld_ptr;
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_planes;
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_obstacles;
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_final_obstacles;
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr xyz_cld_ptr_;
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_planes_;
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_obstacles_;
 
-        cv::Mat getCameraPose();
-        void setPlaneTransform(int id, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, float a, float b, float c, float d,
+        cv::Mat getCameraPose() const;
+
+        void setPlaneTransform(int id, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, float a, float b, float c, float d,
                                Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p);
+
         void createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
         visualization_msgs::Marker addVisualObject(int id, Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p, Eigen::Vector4f color,
                                                    Eigen::Quaternionf orientation = Eigen::Quaternionf(0.0, 0.0, 0.0, 1.0));
-        void makeEllipsoid(pcl::PointCloud<pcl::PointXYZRGB> &cloud, const Eigen::Vector3f radii, const Eigen::Vector4f &c);
 
         template <typename PointT>
         boost::shared_ptr<pcl::PointCloud<PointT>>
         voxel_grid_subsample(const boost::shared_ptr<pcl::PointCloud<PointT>> &cld_in, float cell_size);
-        void filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
+
+        void filterRoom(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud);
     };
 }

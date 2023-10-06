@@ -4,12 +4,10 @@ namespace visavis
 {
     VisavisVision::VisavisVision(ros::NodeHandle &nh) : nh_(nh), private_nh_("~"),
                                                         it_(nh),
-                                                        xyz_cld_ptr(new pcl::PointCloud<pcl::PointXYZRGB>),
-                                                        prev_xyz_cld_ptr(new pcl::PointCloud<pcl::PointXYZRGB>),
-                                                        cloud_planes(new pcl::PointCloud<pcl::PointXYZRGB>),
-                                                        cloud_obstacles(new pcl::PointCloud<pcl::PointXYZRGB>),
-                                                        cloud_final_obstacles(new pcl::PointCloud<pcl::PointXYZRGB>),
-                                                        num_obj(0)
+                                                        xyz_cld_ptr_(new pcl::PointCloud<pcl::PointXYZRGB>),
+                                                        cloud_planes_(new pcl::PointCloud<pcl::PointXYZRGB>),
+                                                        cloud_obstacles_(new pcl::PointCloud<pcl::PointXYZRGB>),
+                                                        num_obj_(0)
     {
 
         private_nh_.param("optical_frame", optical_frame_, std::string(""));
@@ -17,7 +15,7 @@ namespace visavis
         private_nh_.param("near_clip", near_clip_distance_, 0.0);
         private_nh_.param("far_clip", far_clip_distance_, 0.0);
 
-        private_nh_.param("orig_cld_voxel_size", orig_cld_voxel_size, 0.015f);
+        private_nh_.param("orig_cld_voxel_size", orig_cld_voxel_size_, 0.015f);
         private_nh_.param<double>("object_cluster_distance", object_cluster_distance_, 0.5);
         private_nh_.param<int>("max_object_cluster_size", max_object_cluster_size_, 500000);
         private_nh_.param<int>("min_object_cluster_size", min_object_cluster_size_, 1);
@@ -40,10 +38,10 @@ namespace visavis
         pose_pub_ = private_nh_.advertise<geometry_msgs::PoseArray>("obstacles_pose", 1);
 
         broadcaster_ = new tf::TransformBroadcaster();
-        walls_info.walls.resize(6);
+        walls_info_.walls.resize(6);
     }
 
-    cv::Mat VisavisVision::getCameraPose()
+    cv::Mat VisavisVision::getCameraPose() const
     {
         tf::StampedTransform cameraPose_transform;
         try
@@ -76,7 +74,7 @@ namespace visavis
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cld_tmp(new pcl::PointCloud<pcl::PointXYZRGB>);
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cld_tmp_z(new pcl::PointCloud<pcl::PointXYZRGB>);
-        pcl::fromPCLPointCloud2(pcl_pc2, *xyz_cld_ptr);
+        pcl::fromPCLPointCloud2(pcl_pc2, *xyz_cld_ptr_);
 
         /*
         // real
@@ -92,16 +90,16 @@ namespace visavis
                 listener_.waitForTransform(optical_frame_, fixed_frame_, input->header.stamp, ros::Duration(5.0));
                 listener_.lookupTransform(fixed_frame_, optical_frame_, input->header.stamp, optical2map_);
 
-                pcl_ros::transformPointCloud(*cld_tmp_z, *xyz_cld_ptr, optical2map_);
+                pcl_ros::transformPointCloud(*cld_tmp_z, *xyz_cld_ptr_, optical2map_);
 
                 // pcl::PassThrough<pcl::PointXYZRGB> pass_z;
                 // pass_z.setFilterFieldName("z");
                 // pass_z.setFilterLimits(0.01, 1.5);
                 // pass_z.setInputCloud(cld_tmp);
                 // pass_z.setKeepOrganized(true);
-                // pass_z.filter(*xyz_cld_ptr);
+                // pass_z.filter(*xyz_cld_ptr_);
 
-                xyz_cld_ptr->header.frame_id = fixed_frame_;
+                xyz_cld_ptr_->header.frame_id = fixed_frame_;
             }
             catch (tf::TransformException ex)
             {
@@ -122,28 +120,6 @@ namespace visavis
         return final_cld;
     }
 
-    void VisavisVision::makeEllipsoid(pcl::PointCloud<pcl::PointXYZRGB> &cloud, const Eigen::Vector3f radii, const Eigen::Vector4f &c)
-    {
-        pcl::PointXYZRGB p;
-        p.r = 180;
-        p.g = 180;
-
-        float cz = c.z();
-        float cx = c.x();
-        float cy = c.y();
-
-        for (int phi = 0; phi <= 180; phi += 2)
-        {
-            for (int theta = 0; theta <= 360; theta += 2)
-            {
-                p.x = cx + (radii.x() * cos(theta * M_PI / 180) * sin(phi * M_PI / 180));
-                p.y = cy + (radii.y() * sin(theta * M_PI / 180) * sin(phi * M_PI / 180));
-                p.z = cz + (radii.z() * cos(phi * M_PI / 180));
-                cloud.push_back(p);
-            }
-        }
-    }
-
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> VisavisVision::clusterObject(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster, int &num_obj)
     {
         std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> obj_surf;
@@ -161,7 +137,7 @@ namespace visavis
         ec.extract(clusters);
         pcl::ExtractIndices<pcl::PointXYZRGB> extract_;
 
-        num_obj = clusters.size();
+        num_obj_ = clusters.size();
 
         for (unsigned int i = 0; i < clusters.size(); ++i)
         {
@@ -178,7 +154,7 @@ namespace visavis
         return obj_surf;
     }
 
-    void VisavisVision::filterRoom(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
+    void VisavisVision::filterRoom(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     {
         // Create the segmentation object for the planar model and set all the parameters
         pcl::SACSegmentation<pcl::PointXYZRGB> seg;
@@ -235,31 +211,31 @@ namespace visavis
             }
         }
 
-        *cloud_planes += *cloud_temp_planes;
-        pcl::copyPointCloud(*voxel_grid_subsample(cloud_planes, 0.2), *cloud_planes);
-        // ROS_INFO_STREAM("cloud_planes " << cloud_planes->points.size());
+        *cloud_planes_ += *cloud_temp_planes;
+        pcl::copyPointCloud(*voxel_grid_subsample(cloud_planes_, 0.2), *cloud_planes_);
+        // ROS_INFO_STREAM("cloud_planes_ " << cloud_planes_->points.size());
 
-        *cloud_obstacles += *cloud_temp_obstacles;
-        pcl::copyPointCloud(*voxel_grid_subsample(cloud_obstacles, 0.15), *cloud_obstacles);
+        *cloud_obstacles_ += *cloud_temp_obstacles;
+        pcl::copyPointCloud(*voxel_grid_subsample(cloud_obstacles_, 0.15), *cloud_obstacles_);
 
-        createVisualObstacles(cloud_obstacles); // create markers for obstacles
+        createVisualObstacles(cloud_obstacles_); // create markers for obstacles
 
         // pub walls
         sensor_msgs::PointCloud2 cloud_msg;
-        pcl::toROSMsg(*cloud_planes, cloud_msg);
+        pcl::toROSMsg(*cloud_planes_, cloud_msg);
         cloud_msg.header.frame_id = fixed_frame_;
         cloud_pub_.publish(cloud_msg);
         // pub obstacles
         sensor_msgs::PointCloud2 cloud_msg_2;
-        pcl::toROSMsg(*cloud_obstacles, cloud_msg_2);
+        pcl::toROSMsg(*cloud_obstacles_, cloud_msg_2);
         cloud_msg_2.header.frame_id = fixed_frame_;
         cloud_obs_pub_.publish(cloud_msg_2);
 
-        walls_info_pub_.publish(walls_info);
+        walls_info_pub_.publish(walls_info_);
 
         // pub nearst
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr nearest_pcd(new pcl::PointCloud<pcl::PointXYZRGB>);
-        for (auto &w : walls_info.walls)
+        for (auto &w : walls_info_.walls)
         {
             if (w.header.frame_id != "floor" && w.header.frame_id != "ceiling" && w.closest_point.x != 0.0 && w.closest_point.y != 0.0 && w.closest_point.z != 0.0)
             {
@@ -274,7 +250,7 @@ namespace visavis
             }
         }
 
-        for (auto &o : obstacles_info.obstacles)
+        for (auto &o : obstacles_info_.obstacles)
         {
             pcl::PointXYZRGB point;
             point.x = o.closest_point.x;
@@ -294,7 +270,7 @@ namespace visavis
         // end pub nearst
     }
 
-    void VisavisVision::setPlaneTransform(int id, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, float a, float b, float c, float d,
+    void VisavisVision::setPlaneTransform(int id, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, float a, float b, float c, float d,
                                           Eigen::Vector4f centroid, Eigen::Vector4f min_p, Eigen::Vector4f max_p)
     {
         Eigen::Vector3f plane_normal(a, b, c);
@@ -307,8 +283,8 @@ namespace visavis
         float dot_product = plane_normal.dot(up_vector);
         float angle = acos(dot_product);
 
-        visualize_walls.markers.push_back(addVisualObject(id, centroid, min_p, max_p, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5), plane_quaternion));
-        visual_walls_pub_.publish(visualize_walls);
+        visualize_walls_.markers.push_back(addVisualObject(id, centroid, min_p, max_p, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5), plane_quaternion));
+        visual_walls_pub_.publish(visualize_walls_);
 
         float wall_threshold = 95;
         float floor_threshold = 5;
@@ -365,7 +341,7 @@ namespace visavis
         {
             wall.header.frame_id = "floor";
             wall.color_id = 0;
-            walls_info.walls[0] = wall;
+            walls_info_.walls[0] = wall;
         }
         else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
                  centroid[0] < getCameraPose().at<float>(0, 3) &&
@@ -374,7 +350,7 @@ namespace visavis
         {
             wall.header.frame_id = "left";
             wall.color_id = 1;
-            walls_info.walls[1] = wall;
+            walls_info_.walls[1] = wall;
         }
         else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
                  centroid[0] > getCameraPose().at<float>(0, 3) &&
@@ -383,7 +359,7 @@ namespace visavis
         {
             wall.header.frame_id = "right";
             wall.color_id = 2;
-            walls_info.walls[2] = wall;
+            walls_info_.walls[2] = wall;
         }
         else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
                  centroid[1] > getCameraPose().at<float>(1, 3) &&
@@ -392,7 +368,7 @@ namespace visavis
         {
             wall.header.frame_id = "front";
             wall.color_id = 3;
-            walls_info.walls[3] = wall;
+            walls_info_.walls[3] = wall;
         }
         else if (radiansToDegrees(angle) < wall_threshold && radiansToDegrees(angle) > floor_threshold &&
                  centroid[1] < getCameraPose().at<float>(1, 3) &&
@@ -401,7 +377,7 @@ namespace visavis
         {
             wall.header.frame_id = "back";
             wall.color_id = 4;
-            walls_info.walls[4] = wall;
+            walls_info_.walls[4] = wall;
         }
         else
         {
@@ -409,7 +385,7 @@ namespace visavis
             {
                 wall.header.frame_id = "ceiling";
                 wall.color_id = 5;
-                walls_info.walls[5] = wall;
+                walls_info_.walls[5] = wall;
             }
         }
         broadcaster_->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame_, wall.header.frame_id));
@@ -446,17 +422,17 @@ namespace visavis
 
     void VisavisVision::createVisualObstacles(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud)
     {
-        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> objects = clusterObject(cloud, num_obj);
-        // ROS_INFO_STREAM(ros::this_node::getName() << " HAS " << num_obj << "  objects");
-        if (num_obj > 0)
+        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> objects = clusterObject(cloud, num_obj_);
+        // ROS_INFO_STREAM(ros::this_node::getName() << " HAS " << num_obj_ << "  objects");
+        if (num_obj_ > 0)
         {
             geometry_msgs::PoseArray obstacles_poses;
             obstacles_poses.header.frame_id = fixed_frame_;
-            visualize_obstacles.markers.clear();
-            obstacles_info.obstacles.clear();
+            visualize_obstacles_.markers.clear();
+            obstacles_info_.obstacles.clear();
             obstacles_poses.poses.clear();
 
-            for (size_t i = 0; i < num_obj; i++)
+            for (size_t i = 0; i < num_obj_; i++)
             {
                 bool discard = false;
                 Eigen::Vector4f min_pt, max_pt;
@@ -465,7 +441,7 @@ namespace visavis
                 Eigen::Vector4f c;
                 pcl::compute3DCentroid(*objects.at(i), c);
 
-                for (auto &w : walls_info.walls)
+                for (auto &w : walls_info_.walls)
                 {
                     if (std::fabs(w.a * c[0] + w.b * c[1] + w.c * c[2] + w.d) < 0.2)
                     {
@@ -518,15 +494,15 @@ namespace visavis
                     obstacle.closest_point.y = objects.at(i)->points[closest_point_index.at(0)].y;
                     obstacle.closest_point.z = objects.at(i)->points[closest_point_index.at(0)].z;
 
-                    obstacles_info.obstacles.push_back(obstacle);
+                    obstacles_info_.obstacles.push_back(obstacle);
 
-                    visualize_obstacles.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5)));
+                    visualize_obstacles_.markers.push_back(addVisualObject(i, c, min_pt, max_pt, Eigen::Vector4f(1.0, 0.0, 0.0, 0.5)));
                 }
             } // end for i-objs
 
-            ROS_INFO_STREAM("obstacles_info_pub_ HAS " << obstacles_info.obstacles.size() << "  objects");
-            obstacles_info_pub_.publish(obstacles_info);
-            visual_obstacles_pub_.publish(visualize_obstacles);
+            ROS_INFO_STREAM("obstacles_info_pub_ HAS " << obstacles_info_.obstacles.size() << "  objects");
+            obstacles_info_pub_.publish(obstacles_info_);
+            visual_obstacles_pub_.publish(visualize_obstacles_);
         }
     }
 
@@ -534,14 +510,14 @@ namespace visavis
     {
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr map_cld_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-        if (xyz_cld_ptr->size() > 0)
+        if (xyz_cld_ptr_->size() > 0)
         {
             human_ws_pub_.publish(
                 addVisualObject(0, Eigen::Vector4f(getCameraPose().at<float>(0, 3), getCameraPose().at<float>(1, 3), getCameraPose().at<float>(2, 3), 0),
                                 Eigen::Vector4f(0.0, 0.0, 0.0, 0.5), Eigen::Vector4f(0.5, 0.5, 1.7, 0.5), Eigen::Vector4f(0.0, 1.0, 0.0, 0.5), Eigen::Quaternionf(0, 0, 0, 1.0))
 
             );
-            map_cld_ptr = voxel_grid_subsample(xyz_cld_ptr, orig_cld_voxel_size);
+            map_cld_ptr = voxel_grid_subsample(xyz_cld_ptr_, orig_cld_voxel_size_);
             filterRoom(map_cld_ptr);
         }
     }
