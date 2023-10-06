@@ -26,7 +26,6 @@ namespace visavis
         cloud_pub_ = private_nh_.advertise<sensor_msgs::PointCloud2>("walls_cloud", 1);
         cloud_obs_pub_ = private_nh_.advertise<sensor_msgs::PointCloud2>("obstacles_cloud", 1);
         cloud_nearest_pub_ = private_nh_.advertise<sensor_msgs::PointCloud2>("nearest_cloud", 1);
-        ellipsoid_cloud_pub_ = private_nh_.advertise<sensor_msgs::PointCloud2>("ellipsoid_cloud", 1);
 
         walls_info_pub_ = private_nh_.advertise<visavis_vision::WallInfoArray>("walls_info", 1);
         obstacles_info_pub_ = private_nh_.advertise<visavis_vision::ObstacleInfoArray>("obstacles_info", 1);
@@ -34,8 +33,6 @@ namespace visavis
         visual_walls_pub_ = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_walls", 1, true);
         visual_obstacles_pub_ = private_nh_.advertise<visualization_msgs::MarkerArray>("visual_obstacles", 1, true);
         human_ws_pub_ = private_nh_.advertise<visualization_msgs::Marker>("human_ws", 1, true);
-
-        pose_pub_ = private_nh_.advertise<geometry_msgs::PoseArray>("obstacles_pose", 1);
 
         broadcaster_ = new tf::TransformBroadcaster();
         walls_info_.walls.resize(6);
@@ -120,7 +117,7 @@ namespace visavis
         return final_cld;
     }
 
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> VisavisVision::clusterObject(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster, int &num_obj)
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> VisavisVision::clusterObject(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_cluster, int &num_obj)
     {
         std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> obj_surf;
         std::vector<pcl::PointIndices> clusters;
@@ -220,20 +217,11 @@ namespace visavis
 
         createVisualObstacles(cloud_obstacles_); // create markers for obstacles
 
-        // pub walls
-        sensor_msgs::PointCloud2 cloud_msg;
-        pcl::toROSMsg(*cloud_planes_, cloud_msg);
-        cloud_msg.header.frame_id = fixed_frame_;
-        cloud_pub_.publish(cloud_msg);
-        // pub obstacles
-        sensor_msgs::PointCloud2 cloud_msg_2;
-        pcl::toROSMsg(*cloud_obstacles_, cloud_msg_2);
-        cloud_msg_2.header.frame_id = fixed_frame_;
-        cloud_obs_pub_.publish(cloud_msg_2);
+        publishPointCloud(cloud_planes_, cloud_pub_);
+        publishPointCloud(cloud_obstacles_, cloud_obs_pub_);
 
         walls_info_pub_.publish(walls_info_);
 
-        // pub nearst
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr nearest_pcd(new pcl::PointCloud<pcl::PointXYZRGB>);
         for (auto &w : walls_info_.walls)
         {
@@ -262,12 +250,16 @@ namespace visavis
             nearest_pcd->push_back(point);
         }
 
-        sensor_msgs::PointCloud2 cloud_msg_3;
-        pcl::toROSMsg(*nearest_pcd, cloud_msg_3);
-        cloud_msg_3.header.frame_id = fixed_frame_;
-        cloud_nearest_pub_.publish(cloud_msg_3);
+        publishPointCloud(nearest_pcd, cloud_nearest_pub_);
+    }
 
-        // end pub nearst
+    void VisavisVision::publishPointCloud(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud,
+                                          const ros::Publisher &cloud_pub)
+    {
+        sensor_msgs::PointCloud2 cloud_msg;
+        pcl::toROSMsg(*cloud, cloud_msg);
+        cloud_msg.header.frame_id = fixed_frame_;
+        cloud_pub.publish(cloud_msg);
     }
 
     void VisavisVision::setPlaneTransform(int id, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud, float a, float b, float c, float d,
@@ -426,11 +418,8 @@ namespace visavis
         // ROS_INFO_STREAM(ros::this_node::getName() << " HAS " << num_obj_ << "  objects");
         if (num_obj_ > 0)
         {
-            geometry_msgs::PoseArray obstacles_poses;
-            obstacles_poses.header.frame_id = fixed_frame_;
             visualize_obstacles_.markers.clear();
             obstacles_info_.obstacles.clear();
-            obstacles_poses.poses.clear();
 
             for (size_t i = 0; i < num_obj_; i++)
             {
@@ -454,15 +443,6 @@ namespace visavis
                 }
                 if (!discard)
                 {
-                    // ROS_INFO_STREAM(" false disc , pub object " << i);
-                    geometry_msgs::Pose pose;
-                    pose.position.x = c[0];
-                    pose.position.y = c[1];
-                    pose.position.z = c[2];
-                    pose.orientation.x = pose.orientation.y = pose.orientation.z = 0;
-                    pose.orientation.w = 1;
-                    obstacles_poses.poses.push_back(pose);
-                    pose_pub_.publish(obstacles_poses);
 
                     visavis_vision::ObstacleInfo obstacle;
                     obstacle.header.frame_id = fixed_frame_;

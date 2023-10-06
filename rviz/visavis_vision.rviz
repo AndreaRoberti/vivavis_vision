@@ -7,8 +7,6 @@ Panels:
         - /Global Options1
         - /Status1
         - /TF1/Frames1
-        - /PoseArray1
-        - /NEAREST_PCD1
       Splitter Ratio: 0.49705880880355835
     Tree Height: 251
   - Class: rviz/Selection
@@ -227,11 +225,9 @@ Visualization Manager:
       Marker Topic: /visavis_vision/visual_obstacles
       Name: VISUAL_OBS
       Namespaces:
-        0: true
         1: true
         2: true
         3: true
-        5: true
       Queue Size: 100
       Value: true
     - Class: rviz/TF
@@ -249,8 +245,6 @@ Visualization Manager:
           Value: false
         camera_link:
           Value: false
-        floor:
-          Value: true
         front:
           Value: true
         left:
@@ -274,8 +268,6 @@ Visualization Manager:
               {}
             camera_depth_optical_frame:
               {}
-          floor:
-            {}
           front:
             {}
           left:
@@ -299,23 +291,6 @@ Visualization Manager:
       Namespaces:
         0: true
       Queue Size: 100
-      Value: true
-    - Alpha: 1
-      Arrow Length: 0.30000001192092896
-      Axes Length: 0.30000001192092896
-      Axes Radius: 0.009999999776482582
-      Class: rviz/PoseArray
-      Color: 255; 25; 0
-      Enabled: true
-      Head Length: 0.07000000029802322
-      Head Radius: 0.029999999329447746
-      Name: PoseArray
-      Queue Size: 10
-      Shaft Length: 0.23000000417232513
-      Shaft Radius: 0.009999999776482582
-      Shape: Axes
-      Topic: /visavis_vision/obstacles_pose
-      Unreliable: false
       Value: true
     - Class: rviz/Image
       Enabled: true

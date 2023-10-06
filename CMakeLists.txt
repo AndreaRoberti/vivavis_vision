@@ -28,11 +28,6 @@ WallInfo.msg
 WallInfoArray.msg
 ObstacleInfo.msg
 ObstacleInfoArray.msg
-CloudArray.msg
-PointArray.msg
-PoseStampedArray.msg
-Ellipsoid.msg
-EllipsoidArray.msg
 )
 
 generate_messages(DEPENDENCIES geometry_msgs sensor_msgs std_msgs)
