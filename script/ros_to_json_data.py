@@ -14,7 +14,6 @@ from geometry_msgs.msg import PoseArray
 
 # Python libraries
 import numpy as np
-import open3d as o3d
 import math
 import pandas as pd
 import os
