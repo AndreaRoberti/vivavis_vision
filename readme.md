@@ -15,7 +15,7 @@
 
 - Ubuntu 20.04
 
-- ROS Noetic 
+- ROS Noetic , follow [this](http://wiki.ros.org/noetic/Installation/Ubuntu) guide 
 
 ## How To Build
 
@@ -32,6 +32,15 @@ catkin build
 source devel/setup.bash
 ```
 
+## How to Run - Real Environment
+
+- It requires a realsense camera
+```bash
+    sudo apt-get install ros-noetic-realsense2-*
+```
+
+***test in progres***
+
 ## How to Run - Simulation
 
 Download CoppeliaSIM [here](https://www.coppeliarobotics.com/downloads)  *(from version 4.4 above)*
@@ -42,7 +51,7 @@ Download CoppeliaSIM [here](https://www.coppeliarobotics.com/downloads)  *(from 
 ```bash
 roscore
 ```
-- After unzipped CoppeliaSIM archive, naviate to the directory and run it by typing 
+- After unzipped CoppeliaSIM archive, go to the directory and run it by typing 
 
 ```bash
 ./coppeliaSim.sh 
@@ -61,6 +70,18 @@ python3 json_writer_node.py
 ```
 
 Once you are ready, you can press PLAY on the simulator.
+
+## How to Connect with the Audio component
+   
+   - If rosbridge server is not already installed
+
+```bash
+    sudo apt-get install ros-noetic-rosbridge-server 
+```
+
+```bash
+    roslaunch rosbridge_server rosbridge_websocket.launch 
+```
 
 ## Custom ROS Messages
 
