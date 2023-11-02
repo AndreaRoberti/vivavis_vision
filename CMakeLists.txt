@@ -48,6 +48,7 @@ include_directories(include ${Boost_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} ${Eigen
 
 add_executable(visavis_vision_node src/visavis_vision.cpp)
 target_link_libraries( visavis_vision_node ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(visavis_vision_node visavis_vision_generate_messages_cpp)
 
 add_executable(combiner src/rgb_d_combiner.cpp)
 target_link_libraries(combiner  ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
