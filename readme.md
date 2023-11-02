@@ -56,6 +56,7 @@ roscore
 ```bash
 ./coppeliaSim.sh 
 ```
+- Open one of the simulated scene you can find in *sim_scenes* folder
 
 - Then in your caktin workspace
 
