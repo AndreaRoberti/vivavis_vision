@@ -15,7 +15,9 @@
 
 - Ubuntu 20.04
 
-- ROS Noetic , follow [this](http://wiki.ros.org/noetic/Installation/Ubuntu) guide 
+- ROS Noetic , follow [this](http://wiki.ros.org/noetic/Installation/Ubuntu) guide
+
+- Additional python lib : sudo apt-get install python3-pandas
 
 ## How To Build
 
