@@ -63,7 +63,7 @@ roscore
 - Then in your caktin workspace
 
 ```bash
-roslaunch visavis_node visavis_sim.launch
+roslaunch visavis_vision visavis_sim.launch
 ```
 
 - If you want to save JSONs file
