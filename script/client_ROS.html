@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8" />
+
+      <script type="text/javascript" src="/usr/share/javascript/eventemitter2/eventemitter2.min.js"> </script>
+      <script type="text/javascript" src="lib/roslib.min.js"> </script>
+
+      <script src="lib/three.min.js"></script>
+      <script src="/usr/share/javascript/eventemitter2/eventemitter2.js"></script>
+      <script src="lib/roslib.js"></script>
+      <script src="lib/ros3d.js"></script>
+
+      <script type="text/javascript">
+         // Connecting to ROS
+         // Some reference: http://wiki.ros.org/roslibjs/Tutorials/BasicRosFunctionality
+         var ros = new ROSLIB.Ros({url : 'ws://localhost:9090'});
+
+         ros.on('connection', function() {
+            console.log('Connected to websocket server.');
+         });
+
+         ros.on('error', function(error) {
+            console.log('Error connecting to websocket server: ', error);
+         });
+
+         ros.on('close', function() {
+            console.log('Connection to websocket server closed.');
+         });
+
+         // Subscribing to json ROS Topics
+         var json_human_workspace_sub= new ROSLIB.Topic({ros:ros, name:'/out/json_human_workspace', messageType:'std_msgs/String'});
+
+         json_human_workspace_sub.subscribe(function(message) {
+            //console.log('Received message on ' + listener.name + ': ' + message.data);
+            document.getElementById("span_id").innerHTML="</br> Elapsed time [sec]: "+message.data+"</br> Timestamp info: "+"</br>";
+            listener.unsubscribe();
+         });
+
+         var json_walls_equations_sub= new ROSLIB.Topic({ros:ros, name:'/out/json_walls_equations_sub', messageType:'std_msgs/String'});
+         json_walls_equations_sub.subscribe(function(message) {
+            //console.log('Received message on ' + listener.name + ': ' + message.data);
+            document.getElementById("span_id").innerHTML="</br> Elapsed time [sec]: "+message.data+"</br> Timestamp info: "+"</br>";
+            listener.unsubscribe();
+         });
+        
+         // Reference: https://roboticsknowledgebase.com/wiki/tools/roslibjs/
+         // rosrun image_transport republish raw in:=camera/rgb/image_rect_color out:=camera/rgb
+         var img_rgb_sub = new ROSLIB.Topic({ros:ros, name:'/camera/rgb/compressed', messageType: 'sensor_msgs/CompressedImage'});
+         img_rgb_sub.subscribe(function(message) {
+            document.getElementById('img_rgb').src = "data:image/jpg;base64," + message.data;
+         });
+
+         // rosrun image_transport republish raw in:=out/map2d_img1 out:=out/map2d
+         var img_map2d_sub = new ROSLIB.Topic({ros:ros, name:'/out/map2d/compressed', messageType: 'sensor_msgs/CompressedImage'});
+         img_map2d_sub.subscribe(function(message) {
+            document.getElementById('img_map2d').src = "data:image/jpg;base64," + message.data;
+         });
+
+         // rosrun image_transport republish raw in:=out/walls_img out:=out/walls
+         var img_map2d_sub = new ROSLIB.Topic({ros:ros, name:'/out/walls/compressed', messageType: 'sensor_msgs/CompressedImage'});
+         img_map2d_sub.subscribe(function(message) {
+            document.getElementById('img_walls').src = "data:image/jpg;base64," + message.data;
+         });
+
+  
+      </script>
+   </head>
+
+   
+   <body>
+
+      </br>
+      <span id = "span_id">...</span>  
+
+      <img id="img_rgb" style='height:400px; object-fit:contain' src="">
+      <img id="img_map2d" style='height:400px; object-fit:contain' src="">
+      <img id="img_walls" style='height:400px; object-fit:contain' src="">
+
+    
+   </body>
+</html>
