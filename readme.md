@@ -40,7 +40,9 @@ source devel/setup.bash
 ```bash
     sudo apt-get install ros-noetic-realsense2-*
 ```
-
+```bash
+    roslaunch realsense2_camera rs_rgbd.launch
+```
 ***test in progres***
 
 ## How to Run - Simulation
