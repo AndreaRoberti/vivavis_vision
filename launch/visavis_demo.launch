@@ -1,7 +1,15 @@
 <launch>
-    <!-- <node name="visavis_vision" pkg="visavis_vision" type="visavis_vision_node" respawn="false"
-    launch-prefix="gdb -ex run - -args" 
-        output="screen"> -->
+
+    <node name="pcloud_stich" pkg="visavis_vision" type="visavis_pcloud_stich" respawn="false"
+        output="screen">
+        <remap from="/in_pointcloud" to="/local_map" />
+
+        <param name="voxel_size_stiching" value="0.1" />
+        <param name="voxel_size_input_cloud" value="0.1" />
+        <param name="max_cam_depth" value="3.0" />
+        <param name="output_reference_frame" value="map" />
+    </node>
+
     <node name="visavis_vision" pkg="visavis_vision" type="visavis_vision_node" respawn="false"
         output="screen">
         <param name="optical_frame" type="string" value="camera_color_optical_frame" />
@@ -17,11 +25,7 @@
         <param name="min_object_cluster_size" type="int" value="1" />
 
         <remap from="in_cloud" to="/stiched_pointcloud" />
-        <!-- <remap from="in_cloud" to="/camera/depth_registered/points"/> -->
-        <!-- <remap from="in_cloud" to="/slam_registration/sparse_pointcloud" /> -->
-        <!-- <remap from="walls_cloud" to="/planes"/> -->
 
     </node>
-
 
 </launch>

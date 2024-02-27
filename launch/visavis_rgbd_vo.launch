@@ -50,9 +50,9 @@
 
     <!-- <node pkg="visavis_vision" name="json_img_writer" type="json_writer_node.py" /> -->
 
-
+<!-- 
     <node name="rviz_visavis" pkg="rviz" type="rviz"
-        args="-d $(find visavis_vision)/rviz/visavis_vision.rviz" respawn="false" />
+        args="-d $(find visavis_vision)/rviz/visavis_vision.rviz" respawn="false" /> -->
 
 
 </launch>

@@ -379,6 +379,8 @@ namespace visavis
                 wall.color_id = 5;
                 walls_info_.walls[5] = wall;
             }
+            else
+                wall.header.frame_id = "unknown";
         }
         broadcaster_->sendTransform(tf::StampedTransform(currentTransform, ros::Time::now(), fixed_frame_, wall.header.frame_id));
     }
